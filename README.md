@@ -79,7 +79,7 @@ _Raspberry Pi Pico 2 W · CircuitPython · WiFi · OLED · Browser-based config_
 
 ## OLED Dashboard
 
-Switch tabs with **FN + .**
+Switch tabs with **FN + M.**
 
 | Tab     | Content                                                   |
 | ------- | --------------------------------------------------------- |
