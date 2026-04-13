@@ -1,0 +1,2467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MMOrtho Configurator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg:         #080D14;
+            --surface:    #0E1622;
+            --surface2:   #172030;
+            --border:     #1C2840;
+            --border2:    #283A54;
+            --accent:     #3DD68C;
+            --accent-dim: #0E2E1C;
+            --amber:      #E8973A;
+            --blue:       #5DAEF5;
+            --purple:     #9B72F5;
+            --pink:       #F47AB2;
+            --teal:       #34C5C9;
+            --text:       #CDD9E5;
+            --muted:      #6E8098;
+            --dim:        #374255;
+            --success:    #3DD68C;
+            --warn:       #E8973A;
+            --danger:     #F05858;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'JetBrains Mono', 'Cascadia Code', 'Fira Code', monospace;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-size: 9.5pt;
+            background-image:
+                linear-gradient(rgba(61,214,140,0.018) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(61,214,140,0.018) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes ledPulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px var(--accent); }
+            50%       { opacity: 0.65; box-shadow: 0 0 10px var(--accent), 0 0 20px rgba(61,214,140,0.3); }
+        }
+
+        /* ── Header ─────────────────────────────────────────────────────── */
+        header {
+            background: var(--surface);
+            padding: 0.7rem 2rem;
+            border-bottom: 1px solid var(--border2);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+            animation: fadeIn 0.35s ease both;
+            position: relative;
+        }
+        header::after {
+            content: '';
+            position: absolute;
+            bottom: -1px; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--accent) 30%, var(--accent) 70%, transparent 100%);
+            opacity: 0.35;
+        }
+        .header-logo { display: flex; align-items: center; gap: 1rem; }
+        .header-logo img { height: 36px; width: auto; border-radius: 3px; opacity: 0.9; }
+        .header-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.2px;
+        }
+        .header-title .accent { color: var(--accent); }
+        .header-sub { font-size: 0.68rem; color: var(--muted); margin-top: 2px; font-weight: 400; }
+
+        #connection-status {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            font-size: 0.72rem;
+            color: var(--success);
+            font-weight: 600;
+        }
+        .led {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--success);
+            animation: ledPulse 2.4s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        /* ── Nav Tabs ───────────────────────────────────────────────────── */
+        .nav-tabs {
+            display: flex;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border2);
+            flex-shrink: 0;
+            padding: 0 1.2rem;
+            animation: fadeIn 0.4s ease 0.05s both;
+            overflow-x: auto;
+        }
+        .tab {
+            padding: 0.7rem 1.3rem;
+            cursor: pointer;
+            color: var(--muted);
+            font-size: 0.76rem;
+            font-weight: 600;
+            font-family: inherit;
+            transition: color 0.15s, border-color 0.15s;
+            user-select: none;
+            white-space: nowrap;
+            border-bottom: 2px solid transparent;
+            letter-spacing: 0.2px;
+        }
+        .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+        .tab:hover:not(.active) { color: var(--text); }
+        .tab-sym { color: var(--dim); font-size: 0.65rem; margin-right: 0.3rem; }
+        .tab.active .tab-sym { color: var(--accent); opacity: 0.5; }
+
+        /* ── Sections ───────────────────────────────────────────────────── */
+        .section { display: none; }
+        .section.active { display: block; animation: fadeIn 0.2s ease both; }
+        .content-full   { flex: 1; padding: 1.5rem 2rem; overflow-y: auto; }
+        .content-narrow { flex: 1; overflow-y: auto; }
+
+        /* ── Buttons ────────────────────────────────────────────────────── */
+        .btn {
+            background: transparent;
+            color: var(--accent);
+            border: 1px solid var(--accent);
+            padding: 0.42rem 1.1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.75rem;
+            font-family: inherit;
+            transition: background 0.14s, color 0.14s;
+            letter-spacing: 0.3px;
+        }
+        .btn:hover { background: var(--accent); color: #080D14; }
+        .btn-success { border-color: var(--success); color: var(--success); }
+        .btn-success:hover { background: var(--success); color: #080D14; }
+        .btn-secondary { border-color: var(--border2); color: var(--muted); }
+        .btn-secondary:hover { border-color: var(--muted); color: var(--text); background: transparent; }
+        .btn-sm { padding: 0.22rem 0.65rem; font-size: 0.68rem; }
+
+        /* ── Status bar ─────────────────────────────────────────────────── */
+        #status-bar {
+            background: var(--surface);
+            padding: 0.28rem 1.5rem;
+            font-size: 0.68rem;
+            color: var(--muted);
+            border-top: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        #status-bar::before {
+            content: '~/mmortho $ ';
+            color: var(--accent);
+            font-weight: 700;
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           KEYMAP TAB
+           ════════════════════════════════════════════════════════════════ */
+        .keymap-toolbar {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            margin-bottom: 1.3rem;
+            flex-wrap: wrap;
+        }
+        .layer-btn {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border2);
+            padding: 0.38rem 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 0.74rem;
+            font-family: inherit;
+            transition: all 0.14s;
+        }
+        .layer-btn.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+        .layer-btn:hover:not(.active) { border-color: var(--border2); color: var(--text); }
+
+        .keymap-legend {
+            display: flex;
+            gap: 0.7rem;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-left: 0.5rem;
+            font-size: 0.66rem;
+            color: var(--muted);
+        }
+        .legend-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 3px; }
+
+        .keyboard-wrap {
+            display: flex;
+            justify-content: center;
+            overflow-x: auto;
+            padding-bottom: 1.2rem;
+        }
+        .keyboard { display: inline-flex; flex-direction: column; gap: 5px; user-select: none; }
+        .kb-row { display: flex; gap: 5px; align-items: flex-end; }
+        .kb-gap    { width: 46px; flex-shrink: 0; }
+        .kb-spacer { width: 82px; height: 64px; flex-shrink: 0; visibility: hidden; }
+
+        /* ── Keycaps (3D effect) ────────────────────────────────────────── */
+        .key {
+            width: 72px;
+            height: 64px;
+            border-radius: 5px;
+            border: 1px solid var(--border2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-align: center;
+            overflow: hidden;
+            padding: 4px;
+            flex-shrink: 0;
+            background: #0C1420;
+            color: #6A8CAA;
+            position: relative;
+            transition: transform 0.07s ease, box-shadow 0.07s ease;
+            box-shadow:
+                0 4px 0 #030608,
+                inset 0 1px 0 rgba(255,255,255,0.05),
+                inset 0 -1px 0 rgba(0,0,0,0.25);
+        }
+        .key:hover {
+            transform: translateY(-2px);
+            box-shadow:
+                0 6px 0 #030608,
+                0 0 14px rgba(61,214,140,0.1),
+                inset 0 1px 0 rgba(255,255,255,0.07);
+            border-color: var(--border2);
+        }
+        .key:active {
+            transform: translateY(3px);
+            box-shadow: 0 1px 0 #030608, inset 0 2px 4px rgba(0,0,0,0.4);
+        }
+        .key.selected {
+            outline: 1px solid var(--accent);
+            outline-offset: 2px;
+            box-shadow: 0 4px 0 #030608, 0 0 18px rgba(61,214,140,0.2);
+        }
+        .key-extra { width: 82px; }
+
+        .key-id-label {
+            font-size: 0.55rem;
+            color: var(--dim);
+            line-height: 1;
+            margin-bottom: 3px;
+            font-weight: 400;
+        }
+        .key-main-label { line-height: 1.2; word-break: break-all; max-width: 100%; }
+
+        /* ════════════════════════════════════════════════════════════════
+           KEY PICKER MODAL
+           ════════════════════════════════════════════════════════════════ */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(4,8,14,0.9);
+            backdrop-filter: blur(3px);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-overlay.open { display: flex; }
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            padding: 1.3rem;
+            width: 680px;
+            max-width: 96vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.85), 0 0 0 1px var(--border);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 0.7rem;
+            border-bottom: 1px solid var(--border);
+        }
+        .modal-title { font-size: 0.84rem; font-weight: 700; color: var(--text); }
+        .modal-close {
+            background: none; border: none; color: var(--muted);
+            font-size: 1.2rem; cursor: pointer; line-height: 1; padding: 0 0.3rem;
+            font-family: inherit; transition: color 0.12s;
+        }
+        .modal-close:hover { color: var(--danger); }
+
+        .cat-tabs { display: flex; flex-wrap: wrap; gap: 4px; }
+        .cat-tab {
+            padding: 0.2rem 0.58rem;
+            border-radius: 3px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 0.66rem;
+            font-family: inherit;
+            font-weight: 600;
+            transition: all 0.12s;
+        }
+        .cat-tab.active { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+        .cat-tab:hover:not(.active) { color: var(--text); }
+
+        .modal-search {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            padding: 0.4rem 0.7rem;
+            border-radius: 3px;
+            width: 100%;
+            font-size: 0.78rem;
+            font-family: inherit;
+        }
+        .modal-search:focus { border-color: var(--accent); outline: none; }
+        .modal-search::placeholder { color: var(--dim); }
+
+        .picker-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            overflow-y: auto;
+            max-height: 320px;
+            padding-right: 4px;
+        }
+        .pk-btn {
+            width: 58px; height: 46px;
+            border-radius: 4px;
+            border: 1px solid var(--border2);
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer;
+            font-size: 0.66rem; font-weight: 700; text-align: center;
+            padding: 3px;
+            background: #0A1220; color: #6A8CAA;
+            transition: transform 0.07s;
+            word-break: break-all;
+            font-family: inherit;
+            box-shadow: 0 2px 0 rgba(0,0,0,0.4);
+        }
+        .pk-btn:hover { transform: scale(1.08); }
+
+        .modal-footer {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+            padding-top: 0.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           SETTINGS TAB
+           ════════════════════════════════════════════════════════════════ */
+        .settings-scroll { padding: 2rem 2.5rem 3rem; max-width: 860px; margin: 0 auto; }
+
+        .section-title {
+            font-size: 0.66rem;
+            font-weight: 700;
+            color: var(--muted);
+            margin: 2rem 0 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .section-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .section-title:first-child { margin-top: 0; }
+
+        .group-box {
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1.2rem 1.4rem 1rem;
+            position: relative;
+            background: var(--surface);
+        }
+        .group-box-title {
+            position: absolute;
+            top: -0.58rem; left: 0.8rem;
+            background: var(--surface);
+            padding: 0 6px;
+            font-size: 0.63rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--dim);
+        }
+
+        .field-row { display: flex; align-items: center; margin-bottom: 0.65rem; }
+        .field-label { width: 230px; flex-shrink: 0; color: var(--muted); font-size: 0.78rem; }
+        .field-unit { width: 40px; color: var(--dim); font-size: 0.68rem; margin-left: 0.5rem; }
+
+        input[type="text"],
+        input[type="number"],
+        input[type="password"] {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            padding: 0.36rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.78rem;
+            font-family: inherit;
+            transition: border-color 0.12s;
+        }
+        input:focus { border-color: var(--accent); outline: none; }
+        input[type="number"] { width: 90px; }
+        input[type="text"], input[type="password"] { width: 300px; }
+        input::placeholder { color: var(--dim); }
+
+        select {
+            background: var(--bg);
+            border: 1px solid var(--border2);
+            color: var(--text);
+            padding: 0.33rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.76rem;
+            font-family: inherit;
+        }
+        select:focus { border-color: var(--accent); outline: none; }
+
+        .checkbox-row {
+            display: flex; align-items: center; gap: 0.6rem;
+            margin-bottom: 0.65rem; color: var(--muted); font-size: 0.78rem;
+        }
+        .checkbox-row input[type="checkbox"] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; }
+
+        .info-note { color: var(--dim); font-size: 0.68rem; margin-top: 0.5rem; line-height: 1.5; }
+
+        .entity-table { width: 100%; border-collapse: collapse; margin-bottom: 0.5rem; }
+        .entity-table th {
+            text-align: left; padding: 0.32rem 0.6rem;
+            font-size: 0.63rem; text-transform: uppercase; letter-spacing: 0.8px;
+            color: var(--dim); border-bottom: 1px solid var(--border); font-weight: 700;
+        }
+        .entity-table td { padding: 0.28rem 0.5rem; border-bottom: 1px solid var(--border); }
+        .entity-table td input[type="text"] {
+            width: 100%; border: none; background: transparent; padding: 0;
+            color: var(--text); font-size: 0.78rem;
+        }
+        .entity-table tr:hover td { background: var(--surface2); }
+        .entity-table tr.selected td { background: #0E2030; }
+
+        .token-row { display: flex; align-items: center; gap: 0.5rem; }
+        .token-row input { flex: 1; max-width: 300px; }
+        .show-btn {
+            background: transparent; border: 1px solid var(--border2); color: var(--muted);
+            padding: 0.32rem 0.65rem; border-radius: 3px; cursor: pointer;
+            font-size: 0.68rem; font-family: inherit; transition: all 0.12s;
+        }
+        .show-btn:hover { color: var(--text); border-color: var(--muted); }
+
+        /* ════════════════════════════════════════════════════════════════
+           STATS TAB
+           ════════════════════════════════════════════════════════════════ */
+        .stats-wrap { padding: 2rem 2.5rem; max-width: 900px; margin: 0 auto; }
+        .stats-title { font-size: 0.95rem; font-weight: 700; margin-bottom: 0.3rem; color: var(--text); }
+        .stats-subtitle { color: var(--muted); font-size: 0.72rem; margin-bottom: 1.5rem; line-height: 1.65; }
+
+        .stat-cards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+        @media (max-width: 800px) { .stat-cards { grid-template-columns: repeat(2,1fr); } }
+
+        .stat-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 1rem 1.1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: var(--accent);
+            opacity: 0.6;
+        }
+        .stat-icon  { font-size: 1.1rem; margin-bottom: 4px; opacity: 0.7; }
+        .stat-label { color: var(--dim); font-size: 0.62rem; text-transform: uppercase; letter-spacing: 1px; }
+        .stat-value { font-size: 1.35rem; font-weight: 700; color: var(--accent); line-height: 1.1; }
+        .stat-unit  { color: var(--dim); font-size: 0.62rem; }
+
+        .stats-sep { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0 1rem; }
+        .raw-json-label { color: var(--dim); font-size: 0.62rem; margin-bottom: 0.4rem; text-transform: uppercase; letter-spacing: 1px; }
+        .raw-json {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 0.85rem 1rem;
+            font-family: inherit;
+            font-size: 0.72rem;
+            color: var(--muted);
+            white-space: pre;
+            overflow-x: auto;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        /* ════════════════════════════════════════════════════════════════
+           DOCS TAB
+           ════════════════════════════════════════════════════════════════ */
+        .docs-wrap { padding: 2rem 2.5rem; max-width: 860px; margin: 0 auto; }
+        .docs-body { color: var(--text); line-height: 1.75; font-size: 0.83rem; }
+        .docs-body h1 {
+            font-size: 1.15rem; font-weight: 700; margin: 0 0 0.6rem; color: var(--text); text-align: center;
+        }
+        .docs-body h2 {
+            font-size: 0.7rem; font-weight: 700; margin: 2rem 0 0.6rem;
+            color: var(--accent); text-transform: uppercase; letter-spacing: 1.8px;
+            display: flex; align-items: center; gap: 0.75rem;
+        }
+        .docs-body h2::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+        .docs-body h3 { font-size: 0.85rem; font-weight: 700; margin: 1.2rem 0 0.35rem; color: var(--blue); }
+        .docs-body p  { margin: 0.4rem 0; color: var(--muted); }
+        .docs-body ul, .docs-body ol { margin: 0.3rem 0 0.3rem 1.4rem; color: var(--muted); }
+        .docs-body li { margin: 0.22rem 0; }
+        .docs-body strong { color: var(--text); font-weight: 700; }
+        .docs-body code {
+            background: var(--surface2); border: 1px solid var(--border); border-radius: 3px;
+            padding: 1px 5px; font-family: inherit; font-size: 0.76rem; color: var(--amber);
+        }
+        .docs-body pre {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+            padding: 1rem; overflow-x: auto; font-family: inherit; font-size: 0.76rem;
+            color: var(--muted); margin: 0.6rem 0;
+        }
+        .docs-body pre code { background: none; border: none; padding: 0; color: var(--muted); }
+        .docs-body table { border-collapse: collapse; width: 100%; margin: 0.6rem 0; }
+        .docs-body th {
+            background: var(--surface); text-align: left;
+            padding: 0.38rem 0.8rem; font-size: 0.65rem; text-transform: uppercase;
+            letter-spacing: 0.8px; color: var(--dim); border-bottom: 1px solid var(--border); font-weight: 700;
+        }
+        .docs-body td { padding: 0.32rem 0.8rem; border-bottom: 1px solid var(--border); color: var(--muted); }
+        .docs-body tr:hover td { background: var(--surface2); }
+        .docs-body blockquote {
+            border-left: 2px solid var(--warn); margin: 0.6rem 0;
+            padding: 0.45rem 0.9rem; background: rgba(232,151,58,0.05);
+            color: var(--amber); border-radius: 0 3px 3px 0; font-size: 0.78rem;
+        }
+        .docs-body hr { border: none; border-top: 1px solid var(--border); margin: 1.2rem 0; }
+        .docs-body a { color: var(--blue); text-decoration: none; }
+        .docs-body a:hover { text-decoration: underline; }
+
+        /* ════════════════════════════════════════════════════════════════
+           NETWORK TAB
+           ════════════════════════════════════════════════════════════════ */
+        .network-wrap { padding: 2rem 2.5rem; max-width: 700px; margin: 0 auto; }
+        .wifi-list { list-style: none; padding: 0; margin: 1rem 0 0; }
+        .wifi-item {
+            background: var(--surface);
+            margin-bottom: 0.4rem;
+            padding: 0.6rem 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border);
+            font-size: 0.8rem;
+            transition: border-color 0.12s, background 0.12s;
+        }
+        .wifi-item:hover { border-color: var(--accent); background: var(--surface2); }
+        .wifi-rssi { color: var(--dim); font-size: 0.7rem; }
+
+        /* ════════════════════════════════════════════════════════════════
+           MACROS TAB
+           ════════════════════════════════════════════════════════════════ */
+        .macros-wrap { padding: 2rem 2.5rem; max-width: 860px; margin: 0 auto; }
+        .macros-toolbar { display:flex; align-items:center; gap:0.6rem; margin-bottom:1.2rem; flex-wrap:wrap; }
+
+        .macro-table { width:100%; border-collapse:collapse; margin-bottom:1rem; }
+        .macro-table th {
+            text-align:left; padding:0.32rem 0.7rem;
+            font-size:0.63rem; text-transform:uppercase; letter-spacing:0.8px;
+            color:var(--dim); border-bottom:1px solid var(--border); font-weight:700;
+        }
+        .macro-table td { padding:0.4rem 0.7rem; border-bottom:1px solid var(--border); vertical-align:middle; }
+        .macro-table tr:hover td { background: var(--surface2); }
+
+        .macro-type-badge {
+            display:inline-block; padding:1px 7px; border-radius:3px; font-size:0.62rem;
+            font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+        }
+        .mt-text     { background:rgba(93,174,245,0.1); color:var(--blue);    border:1px solid rgba(93,174,245,0.2); }
+        .mt-combo    { background:rgba(232,151,58,0.1);  color:var(--amber);   border:1px solid rgba(232,151,58,0.2); }
+        .mt-mouse    { background:rgba(155,114,245,0.1); color:var(--purple);  border:1px solid rgba(155,114,245,0.2); }
+        .mt-sequence { background:rgba(61,214,140,0.1);  color:var(--success); border:1px solid rgba(61,214,140,0.2); }
+
+        .macro-modal {
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            padding: 1.3rem;
+            width: 600px;
+            max-width: 96vw;
+            max-height: 88vh;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            overflow-y: auto;
+            box-shadow: 0 24px 70px rgba(0,0,0,0.85);
+        }
+
+        .mod-chips { display:flex; flex-wrap:wrap; gap:5px; }
+        .mod-chip {
+            padding:0.22rem 0.72rem; border-radius:3px; font-size:0.7rem; font-weight:700;
+            border:1px solid var(--border2); background:transparent; color:var(--muted);
+            cursor:pointer; user-select:none; transition:all 0.12s; font-family:inherit;
+        }
+        .mod-chip.on { background:var(--accent-dim); border-color:var(--accent); color:var(--accent); }
+
+        .step-row { display:flex; align-items:center; gap:6px; margin-bottom:5px; }
+        .step-type-sel {
+            background:var(--bg); border:1px solid var(--border2); color:var(--text);
+            padding:0.28rem 0.5rem; border-radius:3px; font-size:0.74rem; width:90px; font-family:inherit;
+        }
+        .step-val {
+            flex:1; background:var(--bg); border:1px solid var(--border2); color:var(--text);
+            padding:0.28rem 0.5rem; border-radius:3px; font-size:0.74rem; font-family:inherit;
+        }
+        .step-del {
+            background:transparent; color:var(--danger); border:1px solid rgba(240,88,88,0.25);
+            border-radius:3px; padding:0.22rem 0.5rem; cursor:pointer; font-size:0.8rem;
+            line-height:1; font-family:inherit; transition:all 0.12s;
+        }
+        .step-del:hover { background:rgba(240,88,88,0.1); }
+
+        .key-select {
+            background:var(--bg); border:1px solid var(--border2); color:var(--text);
+            padding:0.3rem 0.5rem; border-radius:3px; font-size:0.74rem; width:100%; font-family:inherit;
+        }
+
+        /* ── Toast ──────────────────────────────────────────────────────── */
+        #toast {
+            position: fixed;
+            bottom: 2.5rem;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: var(--surface);
+            border: 1px solid var(--border2);
+            border-radius: 4px;
+            padding: 0.6rem 1.3rem;
+            font-size: 0.76rem;
+            color: var(--text);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.7);
+            z-index: 9999;
+            transition: transform 0.25s ease, opacity 0.25s ease;
+            opacity: 0;
+            pointer-events: none;
+            white-space: nowrap;
+            font-family: inherit;
+        }
+        #toast.show  { transform: translateX(-50%) translateY(0); opacity: 1; }
+        #toast.success { border-color: var(--success); color: var(--success); }
+        #toast.error   { border-color: var(--danger);  color: var(--danger); }
+        #toast.info    { border-color: var(--blue);    color: var(--blue); }
+
+        /* ══ CIRCUIT TAB ═══════════════════════════════════════════════════ */
+        #section-circuit { flex: 1; overflow: hidden; }
+        #section-circuit.active { display: flex !important; animation: fadeIn 0.2s ease both; }
+        #circ-main { display: flex; flex: 1; overflow: hidden; }
+        #circ-sidebar {
+            width: 220px; background: var(--surface); border-right: 1px solid var(--border);
+            flex-shrink: 0; overflow-y: auto; padding: 1rem;
+            display: flex; flex-direction: column; gap: 1rem;
+        }
+        #circ-sidebar .clt { font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:.5rem }
+        #circ-sidebar .cli { display:flex;align-items:center;gap:.6rem;font-size:.75rem;margin-bottom:.3rem;cursor:pointer;padding:4px 6px;border-radius:4px;transition:background .15s }
+        #circ-sidebar .cli:hover { background:var(--surface2) }
+        #circ-sidebar .cll { width:24px;height:3px;border-radius:2px;flex-shrink:0 }
+        #circ-sidebar .clc { margin-left:auto;font-size:.65rem;color:var(--dim) }
+        #circ-hinfo { background:rgba(14,22,34,.8);border:1px solid var(--border);padding:.8rem;border-radius:6px;font-size:.75rem;line-height:1.6 }
+        #circ-hinfo .chit { font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:.6rem }
+        #circ-hinfo .chir { display:flex;justify-content:space-between;gap:.5rem;margin-bottom:.2rem }
+        #circ-hinfo .chik { color:var(--dim) }
+        .chip { color:var(--dim);font-style:italic;font-size:.7rem }
+        #circ-cw {
+            flex:1; overflow:hidden; position:relative; cursor:grab;
+            background: linear-gradient(rgba(61,214,140,.015) 1px,transparent 1px),
+                        linear-gradient(90deg,rgba(61,214,140,.015) 1px,transparent 1px);
+            background-size:40px 40px; background-color:var(--bg);
+        }
+        #circ-cw.cpan { cursor:grabbing }
+        #circ-sch { width:100%;height:100% }
+        #circ-cw .ccontrols { position:absolute;bottom:1.5rem;right:1.5rem;display:flex;gap:.5rem;z-index:10 }
+        #circ-cw .ccb {
+            background:var(--surface);border:1px solid var(--border);color:var(--muted);
+            width:36px;height:36px;border-radius:6px;cursor:pointer;font-size:1rem;
+            display:flex;align-items:center;justify-content:center;font-family:inherit;
+            transition:all .15s;user-select:none;
+        }
+        #circ-cw .ccb:hover { border-color:var(--accent);color:var(--accent);background:var(--accent-dim) }
+        #circ-cw .czl { background:var(--surface);border:1px solid var(--border);color:var(--dim);padding:0 .8rem;border-radius:6px;font-size:.7rem;line-height:36px }
+        #circ-cw .cvtabs { position:absolute;top:1.5rem;right:1.5rem;display:flex;gap:.4rem;z-index:10;background:var(--surface);padding:.3rem;border-radius:8px;border:1px solid var(--border) }
+        #circ-cw .cvt { background:transparent;border:none;color:var(--muted);padding:.4rem .9rem;border-radius:5px;cursor:pointer;font-size:.7rem;font-family:inherit;font-weight:600;transition:all .15s }
+        #circ-cw .cvt.cact { color:var(--accent);background:var(--accent-dim) }
+        #circ-cw .cvt:hover:not(.cact) { color:var(--text);background:rgba(255,255,255,.04) }
+        .cwire { fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:opacity .25s }
+        .cpd { cursor:pointer;transition:r .15s }
+        .cpd:hover { r:6 }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-logo">
+        <img src="/web/logo.png" alt="MMOrtho Logo">
+        <div>
+            <div class="header-title"><span class="accent">MM</span>Ortho Configurator</div>
+            <div class="header-sub">Web Configuration Interface &mdash; v7.1</div>
+        </div>
+    </div>
+    <div id="connection-status"><span class="led"></span>Connected</div>
+</header>
+
+<div class="nav-tabs">
+    <div class="tab active"  onclick="showSection(this,'docs')"><span class="tab-sym">/</span>Docs</div>
+    <div class="tab"         onclick="showSection(this,'keymap')"><span class="tab-sym">⌨</span>Keymap</div>
+    <div class="tab"         onclick="showSection(this,'macros')"><span class="tab-sym">&gt;</span>Macros</div>
+    <div class="tab"         onclick="showSection(this,'settings')"><span class="tab-sym">#</span>Settings</div>
+    <div class="tab"         onclick="showSection(this,'network')"><span class="tab-sym">~</span>Network</div>
+    <div class="tab"         onclick="showSection(this,'stats')"><span class="tab-sym">%</span>Statistics</div>
+    <div class="tab"         onclick="showSection(this,'circuit')"><span class="tab-sym">⌁</span>Circuit</div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     KEYMAP SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-keymap" class="content-full section">
+    <div class="keymap-toolbar">
+        <button class="layer-btn active" onclick="switchLayer(0)">Base Layer</button>
+        <button class="layer-btn"        onclick="switchLayer(1)">FN Layer</button>
+        <button class="btn btn-success" style="margin-left:0.8rem;" onclick="saveKeymap()">&#128190; Save Keymap</button>
+        <div class="keymap-legend">
+            <span><span class="legend-dot" style="background:#5DAEF5"></span>Letter</span>
+            <span><span class="legend-dot" style="background:#9B72F5"></span>Number</span>
+            <span><span class="legend-dot" style="background:#E8973A"></span>F-Key</span>
+            <span><span class="legend-dot" style="background:#F05858"></span>Modifier</span>
+            <span><span class="legend-dot" style="background:#3DD68C"></span>Nav</span>
+            <span><span class="legend-dot" style="background:#F47AB2"></span>Custom</span>
+            <span><span class="legend-dot" style="background:#34C5C9"></span>Media</span>
+        </div>
+        <span style="margin-left:auto; color:var(--dim); font-size:0.65rem;">Click a key to reassign &middot; Amber border = modified</span>
+    </div>
+    <div class="keyboard-wrap">
+        <div class="keyboard" id="keyboard"></div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     SETTINGS SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-settings" class="content-narrow section">
+    <div class="settings-scroll">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+            <div style="font-size:0.95rem; font-weight:700;">Keyboard Settings</div>
+            <button class="btn btn-success" onclick="saveConfig()">&#128190; Save to Keyboard</button>
+        </div>
+
+        <div class="section-title">Timing</div>
+        <div class="group-box">
+            <div class="group-box-title">Keyboard Timing</div>
+            <div class="field-row">
+                <div class="field-label">Debounce</div>
+                <input type="number" id="cfg_debounce_ms" min="1" max="50">
+                <div class="field-unit">ms</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Autoclicker Interval</div>
+                <input type="number" id="cfg_autoclicker_interval_ms" min="1" max="500">
+                <div class="field-unit">ms</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Autoclicker Toggle Debounce</div>
+                <input type="number" id="cfg_autoclicker_debounce_ms" min="50" max="2000" step="50">
+                <div class="field-unit">ms</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Display Off After</div>
+                <input type="number" id="cfg_energy_save_timeout" min="30" max="1800" step="30">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Deep Idle After</div>
+                <input type="number" id="cfg_deep_idle_timeout" min="60" max="7200" step="60">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Display Refresh</div>
+                <input type="number" id="cfg_display_refresh" min="10" max="600" step="10">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="field-row">
+                <div class="field-label">Garbage Collection Every</div>
+                <input type="number" id="cfg_gc_interval" min="60" max="3600" step="30">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="field-row" style="margin-bottom:0;">
+                <div class="field-label">Voltage Measurement Every</div>
+                <input type="number" id="cfg_voltage_refresh" min="1" max="60">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="info-note">Debounce: lower = faster response, higher = less noise. Deep Idle slows the main loop to save power.</div>
+        </div>
+
+        <div class="section-title">WiFi &amp; Home Assistant</div>
+        <div class="group-box">
+            <div class="group-box-title">Home Assistant Integration</div>
+            <div class="field-row">
+                <div class="field-label">HA URL</div>
+                <input type="text" id="cfg_ha_url" placeholder="http://10.0.0.8:8123">
+            </div>
+            <div class="field-row" style="align-items:center;">
+                <div class="field-label">HA Token</div>
+                <div class="token-row">
+                    <input type="password" id="cfg_ha_token" placeholder="Long-lived access token…">
+                    <button class="show-btn" id="show-token-btn" onclick="toggleTokenVisibility()">Show</button>
+                </div>
+            </div>
+            <div style="color:var(--muted); font-size:0.76rem; margin-bottom:0.4rem; margin-top:0.5rem;">Entities (name → entity_id):</div>
+            <table class="entity-table" id="entity-table">
+                <thead><tr><th>Name</th><th>Entity ID</th><th style="width:32px;"></th></tr></thead>
+                <tbody id="entity-tbody"></tbody>
+            </table>
+            <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                <button class="btn btn-sm btn-secondary" onclick="addEntityRow()">+ Add Entity</button>
+                <button class="btn btn-sm btn-secondary" onclick="removeEntityRow()">&#8722; Remove Selected</button>
+            </div>
+            <div class="info-note">WiFi credentials are managed via the on-device Setup Wizard (FN + WiFi Setup key). Web Configurator: FN + Right Shift.</div>
+        </div>
+
+        <div class="section-title">Weather &amp; NTP</div>
+        <div class="group-box">
+            <div class="group-box-title">Weather &amp; Time (wttr.in / NTP)</div>
+            <div class="checkbox-row">
+                <input type="checkbox" id="cfg_weather_enabled">
+                <label for="cfg_weather_enabled">Enable weather fetch</label>
+            </div>
+            <div class="field-row">
+                <div class="field-label">City (wttr.in)</div>
+                <input type="text" id="cfg_weather_city" placeholder="e.g. Vienna" style="width:180px;">
+            </div>
+            <div class="field-row">
+                <div class="field-label">Refresh Interval</div>
+                <input type="number" id="cfg_weather_refresh_interval" min="60" max="3600" step="60">
+                <div class="field-unit">s</div>
+            </div>
+            <div class="field-row" style="margin-bottom:0;">
+                <div class="field-label">Timezone Offset (UTC)</div>
+                <input type="number" id="cfg_ntp_tz_offset" min="-12" max="14">
+                <div class="field-unit">h</div>
+            </div>
+            <div class="info-note">DST (summer/winter time) is calculated automatically by the firmware.</div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     NETWORK SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-network" class="content-narrow section">
+    <div class="network-wrap">
+        <div class="section-title" style="margin-bottom:1rem; margin-top:0;">WiFi Networks</div>
+        <button class="btn" onclick="scanWifi()">&#128246; Scan Networks</button>
+        <div id="wifi-scan-status" style="margin-top:0.5rem; color:var(--muted); font-size:0.76rem;"></div>
+        <ul id="wifi-list" class="wifi-list"></ul>
+        <div id="wifi-connect-form" style="display:none; margin-top:1.5rem;">
+            <div class="section-title" style="font-size:0.76rem; margin-bottom:0.75rem; margin-top:0;">
+                Connect to: <span id="selected-ssid" style="color:var(--accent);"></span>
+            </div>
+            <div class="field-row">
+                <div class="field-label" style="width:120px;">Password</div>
+                <input type="password" id="wifi-password" style="width:240px;">
+            </div>
+            <button class="btn" onclick="connectWifi()">Connect &amp; Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     MACROS SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-macros" class="content-narrow section">
+    <div class="macros-wrap">
+        <div class="macros-toolbar">
+            <div style="font-size:0.95rem;font-weight:700;flex:1;">Macros</div>
+            <button class="btn" onclick="openMacroEditor()">&#43; New Macro</button>
+        </div>
+        <div style="color:var(--muted);font-size:0.74rem;margin-bottom:1rem;line-height:1.6;">
+            Assign <strong style="color:var(--text);">M1–M8</strong> keys to any key slot in the Keymap tab. Each macro fires when that key is pressed.
+            Text macros type characters using US keyboard layout.
+        </div>
+        <table class="macro-table" id="macro-table">
+            <thead><tr>
+                <th style="width:36px;">ID</th>
+                <th>Name</th>
+                <th style="width:90px;">Type</th>
+                <th>Preview</th>
+                <th style="width:100px;"></th>
+            </tr></thead>
+            <tbody id="macro-tbody">
+                <tr id="macro-empty-row"><td colspan="5" style="color:var(--dim);text-align:center;padding:1.5rem;">
+                    No macros yet. Click <strong style="color:var(--text);">+ New Macro</strong> to create one.
+                </td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Macro Editor Modal -->
+<div class="modal-overlay" id="macro-overlay">
+    <div class="macro-modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <div class="modal-title" id="macro-editor-title">New Macro</div>
+            <button class="modal-close" onclick="closeMacroEditor()">&times;</button>
+        </div>
+
+        <div class="field-row" style="margin:0;">
+            <div class="field-label" style="width:80px;">Name</div>
+            <input type="text" id="me-name" placeholder="My Macro" style="width:200px;">
+            <div style="width:16px;"></div>
+            <div class="field-label" style="width:50px;">Type</div>
+            <select id="me-type" class="step-type-sel" style="width:110px;" onchange="onMacroTypeChange()">
+                <option value="text">Text</option>
+                <option value="combo">Combo</option>
+                <option value="mouse">Mouse</option>
+                <option value="sequence">Sequence</option>
+            </select>
+        </div>
+
+        <div style="color:var(--dim);font-size:0.7rem;">
+            Slot ID: <span id="me-slot-label" style="color:var(--accent);font-weight:700;">M1</span>
+            &nbsp;&mdash;&nbsp;assign key <span id="me-slot-kc" style="color:var(--amber);">KC.MACRO_1</span> in Keymap tab to trigger this macro.
+        </div>
+
+        <div id="me-panel-text">
+            <div style="color:var(--muted);font-size:0.74rem;margin-bottom:0.4rem;">Text to type:</div>
+            <textarea id="me-text-content"
+                style="width:100%;height:80px;background:var(--bg);border:1px solid var(--border2);
+                       color:var(--text);padding:0.5rem;border-radius:3px;font-size:0.78rem;
+                       resize:vertical;font-family:inherit;"
+                placeholder="Hello, World!&#10;Type anything here…"></textarea>
+            <div style="color:var(--dim);font-size:0.65rem;margin-top:3px;">
+                Uses US keyboard layout — letters A-Z and digits work on all systems.
+            </div>
+        </div>
+
+        <div id="me-panel-combo" style="display:none;">
+            <div style="color:var(--muted);font-size:0.74rem;margin-bottom:0.5rem;">Modifier keys:</div>
+            <div class="mod-chips" id="me-combo-mods">
+                <div class="mod-chip" data-kc="LEFT_CONTROL">Ctrl</div>
+                <div class="mod-chip" data-kc="LEFT_SHIFT">Shift</div>
+                <div class="mod-chip" data-kc="LEFT_ALT">Alt</div>
+                <div class="mod-chip" data-kc="RIGHT_ALT">AltGr</div>
+                <div class="mod-chip" data-kc="LEFT_GUI">Win</div>
+            </div>
+            <div style="color:var(--muted);font-size:0.74rem;margin:0.7rem 0 0.4rem;">Main key:</div>
+            <select id="me-combo-key" class="key-select"></select>
+        </div>
+
+        <div id="me-panel-mouse" style="display:none;">
+            <div style="color:var(--muted);font-size:0.74rem;margin-bottom:0.5rem;">Mouse action:</div>
+            <div style="display:flex;align-items:center;gap:0.8rem;flex-wrap:wrap;">
+                <select id="me-mouse-action" class="key-select" style="width:180px;">
+                    <option value="left_click">Left Click</option>
+                    <option value="right_click">Right Click</option>
+                    <option value="middle_click">Middle Click</option>
+                    <option value="scroll_up">Scroll Up</option>
+                    <option value="scroll_down">Scroll Down</option>
+                </select>
+                <div style="display:flex;align-items:center;gap:6px;" id="me-mouse-amount-row">
+                    <span style="color:var(--muted);font-size:0.74rem;">Amount:</span>
+                    <input type="number" id="me-mouse-amount" min="1" max="20" value="1"
+                           style="width:60px;background:var(--bg);border:1px solid var(--border2);
+                                  color:var(--text);padding:0.28rem 0.5rem;border-radius:3px;font-size:0.78rem;">
+                </div>
+            </div>
+        </div>
+
+        <div id="me-panel-sequence" style="display:none;">
+            <div style="color:var(--muted);font-size:0.74rem;margin-bottom:0.5rem;">Steps:</div>
+            <div id="me-steps"></div>
+            <button class="btn btn-secondary btn-sm" style="margin-top:4px;" onclick="addStep()">&#43; Add Step</button>
+        </div>
+
+        <div class="modal-footer" style="margin-top:0.5rem;">
+            <button class="btn btn-secondary btn-sm" onclick="closeMacroEditor()">Cancel</button>
+            <button class="btn btn-success btn-sm" onclick="saveMacroEditor()">&#128190; Save Macro</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     STATS SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-stats" class="content-narrow section">
+    <div class="stats-wrap">
+        <div class="stats-title">Keyboard Statistics</div>
+        <div class="stats-subtitle">
+            Live stats from the keyboard firmware.<br>
+            Data is saved every 5 minutes while the keyboard is running.
+        </div>
+        <div class="stat-cards">
+            <div class="stat-card">
+                <div class="stat-icon">&#9201;</div>
+                <div class="stat-label">Total Runtime</div>
+                <div class="stat-value" id="stat-runtime">—</div>
+                <div class="stat-unit" id="stat-runtime-unit"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9000;</div>
+                <div class="stat-label">Total Keypresses</div>
+                <div class="stat-value" id="stat-keypresses">—</div>
+                <div class="stat-unit" id="stat-keypresses-unit"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#9889;</div>
+                <div class="stat-label">Avg Keys / Min</div>
+                <div class="stat-value" id="stat-kpm">—</div>
+                <div class="stat-unit" id="stat-kpm-unit"></div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">&#128225;</div>
+                <div class="stat-label">IP Address</div>
+                <div class="stat-value" id="stat-ip" style="font-size:0.95rem;">—</div>
+                <div class="stat-unit" id="stat-live-runtime"></div>
+            </div>
+        </div>
+        <hr class="stats-sep">
+        <div class="raw-json-label">Live data from /api/stats</div>
+        <div class="raw-json" id="raw-stats">Not loaded</div>
+        <div style="margin-top:1rem;">
+            <button class="btn" onclick="refreshStats()">&#8635; Refresh</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     DOCS SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-docs" class="content-narrow section active">
+    <div class="docs-wrap">
+        <div class="docs-body" id="docs-body">
+            <p style="color:var(--dim);">Loading documentation…</p>
+        </div>
+        <div style="margin-top:1rem;">
+            <button class="btn btn-secondary btn-sm" onclick="loadDocs()">&#8635; Reload</button>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     CIRCUIT SECTION
+     ══════════════════════════════════════════════════════════════════ -->
+<div id="section-circuit" class="section">
+  <div id="circ-main">
+    <div id="circ-sidebar">
+      <div>
+        <div class="clt">Signal Types</div>
+        <div class="cli" onclick="circFilterType('row')"><div class="cll" style="background:#3DD68C"></div>Rows GP0–4<span class="clc">5</span></div>
+        <div class="cli" onclick="circFilterType('col')"><div class="cll" style="background:#5DAEF5"></div>Cols GP10–21<span class="clc">12</span></div>
+        <div class="cli" onclick="circFilterType('i2c')"><div class="cll" style="background:#E8973A"></div>I²C SDA/SCL<span class="clc">2</span></div>
+        <div class="cli" onclick="circFilterType('key')"><div class="cll" style="background:#F47AB2"></div>Extra Keys<span class="clc">2</span></div>
+        <div class="cli" onclick="circFilterType('pwr')"><div class="cll" style="background:#F05858"></div>Power Rail<span class="clc">3</span></div>
+      </div>
+      <div style="height:1px;background:var(--border)"></div>
+      <div id="circ-hinfo">
+        <div class="chit">Component Details</div>
+        <div id="circ-hic" class="chip">Hover a pin or wire</div>
+      </div>
+      <div style="height:1px;background:var(--border)"></div>
+      <div>
+        <div class="clt">Matrix Logic</div>
+        <div style="font-size:.7rem;color:var(--muted);line-height:1.8">
+          Layout: <span style="color:var(--text)">5 × 12</span> = 62 keys<br>
+          Rows: <span style="color:#3DD68C">GP0–GP4</span><br>
+          Cols: <span style="color:#5DAEF5">GP10–GP21</span><br>
+          Pull-up · active <span style="color:#3DD68C">LOW</span>
+        </div>
+      </div>
+    </div>
+    <div id="circ-cw">
+      <svg id="circ-sch" viewBox="0 0 1580 790" xmlns="http://www.w3.org/2000/svg">
+        <g id="circ-vp"></g>
+      </svg>
+      <div class="cvtabs">
+        <button class="cvt cact" onclick="circSetView('all',event)">All</button>
+        <button class="cvt" onclick="circSetView('matrix',event)">Matrix</button>
+        <button class="cvt" onclick="circSetView('i2c',event)">I²C</button>
+        <button class="cvt" onclick="circSetView('key',event)">Keys</button>
+      </div>
+      <div class="ccontrols">
+        <span class="czl" id="circ-zlab">100%</span>
+        <div class="ccb" onclick="circZoomCtrl(.15)">+</div>
+        <div class="ccb" onclick="circZoomCtrl(-.15)">−</div>
+        <div class="ccb" onclick="circResetView()" title="Reset">⌂</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="status-bar">Ready</div>
+<div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════════
+     KEY PICKER MODAL
+     ══════════════════════════════════════════════════════════════════ -->
+<div class="modal-overlay" id="picker-overlay">
+    <div class="modal" role="dialog" aria-modal="true">
+        <div class="modal-header">
+            <div class="modal-title">Assign Key &mdash; <span id="picker-key-id"></span></div>
+            <button class="modal-close" onclick="closePicker()">&times;</button>
+        </div>
+        <div class="cat-tabs" id="cat-tabs"></div>
+        <input class="modal-search" type="text" id="picker-search"
+               placeholder="Search keycodes…" oninput="renderPicker()">
+        <div class="picker-grid" id="picker-grid"></div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary btn-sm" onclick="closePicker()">Cancel</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ======================================================================
+//  KEYCODE MAP   "code_string": ["short_label", "category"]
+// ======================================================================
+const KEYCODES = {
+    // Letters
+    "Keycode.A":["A","letter"],"Keycode.B":["B","letter"],"Keycode.C":["C","letter"],
+    "Keycode.D":["D","letter"],"Keycode.E":["E","letter"],"Keycode.F":["F","letter"],
+    "Keycode.G":["G","letter"],"Keycode.H":["H","letter"],"Keycode.I":["I","letter"],
+    "Keycode.J":["J","letter"],"Keycode.K":["K","letter"],"Keycode.L":["L","letter"],
+    "Keycode.M":["M","letter"],"Keycode.N":["N","letter"],"Keycode.O":["O","letter"],
+    "Keycode.P":["P","letter"],"Keycode.Q":["Q","letter"],"Keycode.R":["R","letter"],
+    "Keycode.S":["S","letter"],"Keycode.T":["T","letter"],"Keycode.U":["U","letter"],
+    "Keycode.V":["V","letter"],"Keycode.W":["W","letter"],"Keycode.X":["X","letter"],
+    "Keycode.Y":["Y","letter"],"Keycode.Z":["Z","letter"],
+    // Numbers
+    "Keycode.ONE":["1","number"],"Keycode.TWO":["2","number"],"Keycode.THREE":["3","number"],
+    "Keycode.FOUR":["4","number"],"Keycode.FIVE":["5","number"],"Keycode.SIX":["6","number"],
+    "Keycode.SEVEN":["7","number"],"Keycode.EIGHT":["8","number"],"Keycode.NINE":["9","number"],
+    "Keycode.ZERO":["0","number"],
+    // F-Keys
+    "Keycode.F1":["F1","function"],"Keycode.F2":["F2","function"],"Keycode.F3":["F3","function"],
+    "Keycode.F4":["F4","function"],"Keycode.F5":["F5","function"],"Keycode.F6":["F6","function"],
+    "Keycode.F7":["F7","function"],"Keycode.F8":["F8","function"],"Keycode.F9":["F9","function"],
+    "Keycode.F10":["F10","function"],"Keycode.F11":["F11","function"],"Keycode.F12":["F12","function"],
+    // Modifiers
+    "Keycode.LEFT_SHIFT":["L\u21e7","modifier"],"Keycode.RIGHT_SHIFT":["R\u21e7","modifier"],
+    "Keycode.LEFT_CONTROL":["LCtrl","modifier"],"Keycode.RIGHT_CONTROL":["RCtrl","modifier"],
+    "Keycode.LEFT_ALT":["LAlt","modifier"],"Keycode.RIGHT_ALT":["AltGr","modifier"],
+    "Keycode.LEFT_GUI":["Win","modifier"],"Keycode.RIGHT_GUI":["RWin","modifier"],
+    // Navigation
+    "Keycode.UP_ARROW":["\u2191","navigation"],"Keycode.DOWN_ARROW":["\u2193","navigation"],
+    "Keycode.LEFT_ARROW":["\u2190","navigation"],"Keycode.RIGHT_ARROW":["\u2192","navigation"],
+    "Keycode.HOME":["Home","navigation"],"Keycode.END":["End","navigation"],
+    "Keycode.PAGE_UP":["PgUp","navigation"],"Keycode.PAGE_DOWN":["PgDn","navigation"],
+    "Keycode.INSERT":["Ins","navigation"],
+    // Editing
+    "Keycode.ESCAPE":["ESC","editing"],"Keycode.BACKSPACE":["BSP","editing"],
+    "Keycode.ENTER":["ENT","editing"],"Keycode.TAB":["TAB","editing"],
+    "Keycode.SPACE":["SPC","editing"],"Keycode.CAPS_LOCK":["CAPS","editing"],
+    "Keycode.DELETE":["DEL","editing"],"Keycode.PRINT_SCREEN":["PrtSc","editing"],
+    // Symbols
+    "Keycode.MINUS":["-","symbol"],"Keycode.EQUALS":["=","symbol"],
+    "Keycode.LEFT_BRACKET":["[","symbol"],"Keycode.RIGHT_BRACKET":["]","symbol"],
+    "Keycode.BACKSLASH":["\\","symbol"],"Keycode.SEMICOLON":[";","symbol"],
+    "Keycode.QUOTE":["'","symbol"],"Keycode.GRAVE_ACCENT":["^\`","symbol"],
+    "Keycode.COMMA":[",","symbol"],"Keycode.PERIOD":[".","symbol"],
+    "Keycode.FORWARD_SLASH":["/","symbol"],
+    // Custom
+    "KC.FN":["FN","custom"],"KC.LAYER_TOGGLE":["L-TG","custom"],
+    "KC.MOUSE_LEFT":["M-L","custom"],"KC.MOUSE_RIGHT":["M-R","custom"],
+    "KC.MOUSE_WHEEL_UP":["W\u2191","custom"],"KC.MOUSE_WHEEL_DOWN":["W\u2193","custom"],
+    "KC.AUTOCLICKER":["AUTO","custom"],"KC.WIFI_TOGGLE":["WiFi","custom"],
+    "KC.WIFI_SETUP":["W-Set","custom"],"KC.DISPLAY_MODE":["Disp","custom"],
+    "KC.SHOW_STATS":["Stat","custom"],"KC.SYSTEM_RESET":["RST","custom"],
+    "KC.CAPS_TOGGLE":["CpTg","custom"],
+    // Media
+    "KC.MUTE":["MUTE","media"],"KC.VOL_DOWN":["V\u2212","media"],"KC.VOL_UP":["V+","media"],
+    // Special
+    "KC.TRANS":["\u25bd","special"],"KC.NO":["---","special"],
+    // Macros
+    "KC.MACRO_1":["M1","macro"],"KC.MACRO_2":["M2","macro"],
+    "KC.MACRO_3":["M3","macro"],"KC.MACRO_4":["M4","macro"],
+    "KC.MACRO_5":["M5","macro"],"KC.MACRO_6":["M6","macro"],
+    "KC.MACRO_7":["M7","macro"],"KC.MACRO_8":["M8","macro"]
+};
+
+const CATEGORIES = [
+    ["all","All"],["letter","Letter"],["number","Number"],["function","F-Key"],
+    ["modifier","Modifier"],["navigation","Nav"],["editing","Editing"],
+    ["symbol","Symbol"],["custom","Custom"],["media","Media"],["macro","Macro"],["special","Special"]
+];
+
+const CAT_BORDER = {
+    letter:"#5DAEF5", number:"#9B72F5", function:"#E8973A", modifier:"#F05858",
+    navigation:"#3DD68C", editing:"#4B6080", symbol:"#4A6080", custom:"#F47AB2",
+    media:"#34C5C9", macro:"#9B72F5", special:"#2A3850", unknown:"#1C2840"
+};
+const CAT_BG = {
+    letter:"#0A1828", number:"#130A28", function:"#1E1000", modifier:"#200A0A",
+    navigation:"#081E14", editing:"#0C1420", symbol:"#0A1220", custom:"#20080E",
+    media:"#081A1C", macro:"#130A28", special:"#080D14", unknown:"#080D14"
+};
+const CAT_TEXT = {
+    letter:"#5DAEF5", number:"#9B72F5", function:"#E8973A", modifier:"#F05858",
+    navigation:"#3DD68C", editing:"#6E8098", symbol:"#6E8098", custom:"#F47AB2",
+    media:"#34C5C9", macro:"#9B72F5", special:"#374255", unknown:"#6E8098"
+};
+
+// ======================================================================
+//  KEYBOARD PHYSICAL LAYOUT
+// ======================================================================
+const KB_LAYOUT = [
+    ["111","112","113","114","115","116", "_sp", null, "_sp", "216","215","214","213","212","211"],
+    ["121","122","123","124","125","126", "_sp", null, "_sp", "226","225","224","223","222","221"],
+    ["131","132","133","134","135","136", "_sp", null, "_sp", "236","235","234","233","232","231"],
+    ["141","142","143","144","145","146", "_sp", null, "_sp", "246","245","244","243","242","241"],
+    ["151","152","153","154","155","156", "E19", null, "E18", "256","255","254","253","252","251"],
+];
+
+// ======================================================================
+//  STATE
+// ======================================================================
+let currentLayers    = {"0":{}, "1":{}};
+let currentLayer     = 0;
+let selectedKeyId    = null;
+let pickerCat        = "all";
+let currentConfig    = {};
+let originalLayers   = {"0":{}, "1":{}};
+let selectedEntityRow = -1;
+
+// ======================================================================
+//  HELPERS
+// ======================================================================
+function kcInfo(kcStr) {
+    if (!kcStr) return { label:"?", cat:"unknown" };
+    const e = KEYCODES[kcStr];
+    if (e) return { label:e[0], cat:e[1] };
+    const short = kcStr.replace("Keycode.","").replace("KC.","").substring(0,6);
+    return { label:short, cat:"unknown" };
+}
+function getLayerKc(keyId) {
+    return currentLayers[String(currentLayer)][keyId] || null;
+}
+function isModified(keyId) {
+    const orig = (originalLayers[String(currentLayer)] || {})[keyId];
+    const cur  = (currentLayers[String(currentLayer)] || {})[keyId];
+    return orig !== undefined && orig !== cur;
+}
+
+// ======================================================================
+//  SECTION SWITCHING
+// ======================================================================
+function showSection(tabEl, id) {
+    document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('section-' + id).classList.add('active');
+    tabEl.classList.add('active');
+    if (id === 'stats') refreshStats();
+    if (id === 'settings' && Object.keys(currentConfig).length === 0) loadConfig();
+    if (id === 'docs' && document.getElementById('docs-body').children.length <= 1) loadDocs();
+    if (id === 'macros' && _macros.length === 0) loadMacros();
+    if (id === 'circuit') _initCircuit();
+}
+
+// ======================================================================
+//  LAYER SWITCHING
+// ======================================================================
+function switchLayer(idx) {
+    currentLayer = idx;
+    document.querySelectorAll('.layer-btn').forEach((b, i) => {
+        b.classList.toggle('active', i === idx);
+    });
+    renderKeyboard();
+}
+
+// ======================================================================
+//  RENDER KEYBOARD
+// ======================================================================
+function renderKeyboard() {
+    const kb = document.getElementById('keyboard');
+    kb.innerHTML = '';
+
+    KB_LAYOUT.forEach(row => {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'kb-row';
+
+        row.forEach(kid => {
+            if (kid === null) {
+                const gap = document.createElement('div');
+                gap.className = 'kb-gap';
+                rowEl.appendChild(gap);
+            } else if (kid === '_sp') {
+                const sp = document.createElement('div');
+                sp.className = 'kb-spacer';
+                rowEl.appendChild(sp);
+            } else {
+                rowEl.appendChild(makeKeyEl(kid));
+            }
+        });
+
+        kb.appendChild(rowEl);
+    });
+}
+
+function makeKeyEl(keyId) {
+    const kcStr = getLayerKc(keyId);
+    const info  = kcInfo(kcStr);
+    const cat   = info.cat;
+    const mod   = isModified(keyId);
+
+    const el = document.createElement('div');
+    el.className = 'key' + (keyId.startsWith('E') ? ' key-extra' : '');
+    el.dataset.keyid = keyId;
+
+    el.style.borderColor     = CAT_BORDER[cat] || CAT_BORDER.unknown;
+    el.style.backgroundColor = CAT_BG[cat]     || CAT_BG.unknown;
+    el.style.color           = CAT_TEXT[cat]   || CAT_TEXT.unknown;
+
+    if (mod) el.style.borderTop = '2px solid #E8973A';
+
+    if (keyId === selectedKeyId) el.classList.add('selected');
+
+    const idLbl = document.createElement('div');
+    idLbl.className = 'key-id-label';
+    idLbl.textContent = keyId;
+
+    const mainLbl = document.createElement('div');
+    mainLbl.className = 'key-main-label';
+    mainLbl.textContent = kcStr ? info.label : '?';
+
+    el.appendChild(idLbl);
+    el.appendChild(mainLbl);
+    el.addEventListener('click', () => openPicker(keyId));
+    return el;
+}
+
+function refreshKey(keyId) {
+    const oldEl = document.querySelector(`.key[data-keyid="${keyId}"]`);
+    if (oldEl) oldEl.parentNode.replaceChild(makeKeyEl(keyId), oldEl);
+}
+
+// ======================================================================
+//  KEY PICKER MODAL
+// ======================================================================
+function openPicker(keyId) {
+    selectedKeyId = keyId;
+    document.getElementById('picker-key-id').textContent = keyId;
+    document.getElementById('picker-search').value = '';
+    pickerCat = 'all';
+
+    document.querySelectorAll('.key').forEach(k =>
+        k.classList.toggle('selected', k.dataset.keyid === keyId)
+    );
+
+    buildCatTabs();
+    renderPicker();
+    document.getElementById('picker-overlay').classList.add('open');
+    document.getElementById('picker-search').focus();
+}
+
+function closePicker() {
+    document.getElementById('picker-overlay').classList.remove('open');
+    document.querySelectorAll('.key.selected').forEach(k => k.classList.remove('selected'));
+    selectedKeyId = null;
+}
+
+function buildCatTabs() {
+    const container = document.getElementById('cat-tabs');
+    container.innerHTML = '';
+    CATEGORIES.forEach(([id, label]) => {
+        const btn = document.createElement('button');
+        btn.className = 'cat-tab' + (id === pickerCat ? ' active' : '');
+        btn.textContent = label;
+        btn.onclick = () => {
+            pickerCat = id;
+            document.querySelectorAll('.cat-tab').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            renderPicker();
+        };
+        container.appendChild(btn);
+    });
+}
+
+function renderPicker() {
+    const query = document.getElementById('picker-search').value.toLowerCase();
+    const grid  = document.getElementById('picker-grid');
+    grid.innerHTML = '';
+
+    Object.entries(KEYCODES).forEach(([kcStr, [label, cat]]) => {
+        if (pickerCat !== 'all' && cat !== pickerCat) return;
+        if (query && !kcStr.toLowerCase().includes(query) && !label.toLowerCase().includes(query)) return;
+
+        const btn = document.createElement('div');
+        btn.className = 'pk-btn';
+        btn.title = kcStr;
+        btn.style.borderColor     = CAT_BORDER[cat] || CAT_BORDER.unknown;
+        btn.style.backgroundColor = CAT_BG[cat]     || CAT_BG.unknown;
+        btn.style.color           = CAT_TEXT[cat]   || CAT_TEXT.unknown;
+        btn.textContent = label;
+        btn.addEventListener('click', () => assignKey(kcStr));
+        grid.appendChild(btn);
+    });
+}
+
+function assignKey(kcStr) {
+    if (!selectedKeyId) return;
+    const keyId = selectedKeyId;
+    currentLayers[String(currentLayer)][keyId] = kcStr;
+    closePicker();
+    refreshKey(keyId);
+    showStatus('Key ' + keyId + ' \u2192 ' + kcStr);
+}
+
+document.getElementById('picker-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closePicker();
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePicker(); });
+
+// ======================================================================
+//  LOAD / SAVE KEYMAP
+// ======================================================================
+async function loadKeymap() {
+    showStatus('Loading keymap…');
+    try {
+        const resp = await fetch('/api/keymap');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        currentLayers = await resp.json();
+        originalLayers = JSON.parse(JSON.stringify(currentLayers));
+        renderKeyboard();
+        showStatus('Keymap loaded.');
+    } catch(e) {
+        showStatus('Error loading keymap: ' + e);
+    }
+}
+
+async function saveKeymap() {
+    const diff = {};
+    for (const layer in currentLayers) {
+        for (const key in currentLayers[layer]) {
+            if (!originalLayers[layer] || currentLayers[layer][key] !== originalLayers[layer][key]) {
+                if (!diff[layer]) diff[layer] = {};
+                diff[layer][key] = currentLayers[layer][key];
+            }
+        }
+    }
+    if (Object.keys(diff).length === 0) {
+        showStatus('No changes to save.');
+        return;
+    }
+
+    showStatus('Saving keymap…');
+    const doFetch = () => fetch('/api/keymap', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(diff)
+    });
+
+    let res;
+    try {
+        let resp = await doFetch();
+        res = await resp.json();
+    } catch(e) {
+        showStatus('Retrying…');
+        await new Promise(r => setTimeout(r, 1200));
+        try {
+            let resp = await doFetch();
+            res = await resp.json();
+        } catch(e2) {
+            showStatus('Error saving keymap: ' + e2);
+            showToast('&#10007; Save failed: ' + e2, 'error');
+            return;
+        }
+    }
+
+    if (res.success) {
+        originalLayers = JSON.parse(JSON.stringify(currentLayers));
+        renderKeyboard();
+        showStatus('Keymap saved successfully!');
+        showToast('&#10003; Keymap saved — changes take effect after keyboard restart', 'success');
+    } else {
+        showStatus('Save failed: ' + (res.error || 'unknown'));
+        showToast('&#10007; Save failed: ' + (res.error || 'unknown'), 'error');
+    }
+}
+
+// ======================================================================
+//  LOAD / SAVE CONFIG  (Settings Tab)
+// ======================================================================
+async function loadConfig() {
+    showStatus('Loading settings…');
+    try {
+        const resp = await fetch('/api/config');
+        currentConfig = await resp.json();
+        const t = currentConfig.timing || {};
+        const ha = currentConfig.ha || {};
+        const w = currentConfig.weather || {};
+
+        setVal('cfg_debounce_ms',              t.debounce_ms);
+        setVal('cfg_autoclicker_interval_ms',  t.autoclicker_interval_ms);
+        setVal('cfg_autoclicker_debounce_ms',  t.autoclicker_debounce_ms);
+        setVal('cfg_energy_save_timeout',      t.energy_save_timeout);
+        setVal('cfg_deep_idle_timeout',        t.deep_idle_timeout);
+        setVal('cfg_display_refresh',          t.display_refresh);
+        setVal('cfg_gc_interval',              t.gc_interval);
+        setVal('cfg_voltage_refresh',          t.voltage_refresh);
+
+        setVal('cfg_ha_url',   ha.url);
+        setVal('cfg_ha_token', ha.token);
+
+        const tbody = document.getElementById('entity-tbody');
+        tbody.innerHTML = '';
+        const entities = ha.entities || {};
+        Object.entries(entities).forEach(([k, v]) => addEntityRow(k, v));
+
+        setVal('cfg_weather_city',             w.city);
+        document.getElementById('cfg_weather_enabled').checked = !!w.enabled;
+        setVal('cfg_weather_refresh_interval', w.refresh_interval);
+        setVal('cfg_ntp_tz_offset',            w.ntp_tz_offset);
+
+        showStatus('Settings loaded.');
+    } catch(e) {
+        showStatus('Error loading settings: ' + e);
+    }
+}
+
+function setVal(id, val) {
+    const el = document.getElementById(id);
+    if (el && val !== undefined && val !== null) el.value = val;
+}
+
+async function saveConfig() {
+    showStatus('Saving settings…');
+
+    const entities = {};
+    document.querySelectorAll('#entity-tbody tr').forEach(tr => {
+        const inputs = tr.querySelectorAll('input[type="text"]');
+        if (inputs.length >= 2) {
+            const k = inputs[0].value.trim();
+            const v = inputs[1].value.trim();
+            if (k) entities[k] = v;
+        }
+    });
+
+    const data = {
+        timing: {
+            debounce_ms:             intVal('cfg_debounce_ms'),
+            autoclicker_interval_ms: intVal('cfg_autoclicker_interval_ms'),
+            autoclicker_debounce_ms: intVal('cfg_autoclicker_debounce_ms'),
+            energy_save_timeout:     intVal('cfg_energy_save_timeout'),
+            deep_idle_timeout:       intVal('cfg_deep_idle_timeout'),
+            display_refresh:         intVal('cfg_display_refresh'),
+            gc_interval:             intVal('cfg_gc_interval'),
+            voltage_refresh:         intVal('cfg_voltage_refresh'),
+        },
+        ha: {
+            url:      document.getElementById('cfg_ha_url').value.trim(),
+            token:    document.getElementById('cfg_ha_token').value.trim(),
+            entities: entities,
+        },
+        weather: {
+            city:             document.getElementById('cfg_weather_city').value.trim(),
+            enabled:          document.getElementById('cfg_weather_enabled').checked,
+            refresh_interval: intVal('cfg_weather_refresh_interval'),
+            ntp_tz_offset:    intVal('cfg_ntp_tz_offset'),
+        }
+    };
+
+    try {
+        const resp = await fetch('/api/config', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(data)
+        });
+        const res = await resp.json();
+        if (res.success) showStatus('Settings saved successfully!');
+        else showStatus('Save failed: ' + (res.error || 'unknown'));
+    } catch(e) {
+        showStatus('Error saving settings: ' + e);
+    }
+}
+
+function intVal(id) {
+    return parseInt(document.getElementById(id).value) || 0;
+}
+
+function addEntityRow(name='new_device', entityId='switch.new_device') {
+    const tbody = document.getElementById('entity-tbody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><input type="text" value="${name}" style="width:100%;background:transparent;border:none;color:#CDD9E5;font-size:0.78rem;font-family:inherit;"></td>
+        <td><input type="text" value="${entityId}" style="width:100%;background:transparent;border:none;color:#CDD9E5;font-size:0.78rem;font-family:inherit;"></td>
+        <td style="text-align:center;">
+            <button class="btn btn-sm" style="border-color:rgba(240,88,88,0.4);color:#F05858;padding:2px 6px;font-size:0.62rem;"
+                    onclick="this.closest('tr').remove()">&#10005;</button>
+        </td>`;
+    tr.onclick = function() {
+        document.querySelectorAll('#entity-tbody tr').forEach(r => r.classList.remove('selected'));
+        this.classList.add('selected');
+    };
+    tbody.appendChild(tr);
+}
+
+function removeEntityRow() {
+    const sel = document.querySelector('#entity-tbody tr.selected');
+    if (sel) sel.remove();
+    else {
+        const rows = document.querySelectorAll('#entity-tbody tr');
+        if (rows.length > 0) rows[rows.length-1].remove();
+    }
+}
+
+let _tokenVisible = false;
+function toggleTokenVisibility() {
+    _tokenVisible = !_tokenVisible;
+    document.getElementById('cfg_ha_token').type = _tokenVisible ? 'text' : 'password';
+    document.getElementById('show-token-btn').textContent = _tokenVisible ? 'Hide' : 'Show';
+}
+
+// ======================================================================
+//  STATS
+// ======================================================================
+async function refreshStats() {
+    try {
+        const resp = await fetch('/api/stats');
+        const d    = await resp.json();
+
+        const runtime = d.alltime_runtime || 0;
+        const keys    = d.alltime_keypress || 0;
+        const live    = d.live_runtime || 0;
+
+        let rtStr, rtUnit;
+        if (runtime >= 60) {
+            rtStr  = (runtime / 60).toFixed(1) + 'h';
+            rtUnit = '(' + runtime + ' min total)';
+        } else {
+            rtStr  = String(runtime);
+            rtUnit = 'minutes';
+        }
+
+        let kpStr, kpUnit;
+        if (keys >= 1000000) {
+            kpStr  = (keys / 1000000).toFixed(2) + 'M';
+            kpUnit = keys.toLocaleString() + ' total';
+        } else if (keys >= 1000) {
+            kpStr  = (keys / 1000).toFixed(1) + 'K';
+            kpUnit = keys.toLocaleString() + ' total';
+        } else {
+            kpStr  = String(keys);
+            kpUnit = 'keypresses';
+        }
+
+        const kpm = runtime > 0 ? Math.round(keys / runtime) : 0;
+
+        setText('stat-runtime',         rtStr);
+        setText('stat-runtime-unit',    rtUnit);
+        setText('stat-keypresses',      kpStr);
+        setText('stat-keypresses-unit', kpUnit);
+        setText('stat-kpm',             kpm > 0 ? String(kpm) : '—');
+        setText('stat-kpm-unit',        kpm > 0 ? 'keys / min' : '');
+        setText('stat-ip',              d.ip || '—');
+        setText('stat-live-runtime',    'Live: ' + (live || 0) + ' min');
+
+        document.getElementById('raw-stats').textContent = JSON.stringify(d, null, 2);
+    } catch(e) {
+        document.getElementById('raw-stats').textContent = 'Error: ' + e;
+    }
+}
+
+function setText(id, val) {
+    const el = document.getElementById(id);
+    if (el) el.textContent = val;
+}
+
+// ======================================================================
+//  NETWORK
+// ======================================================================
+async function scanWifi() {
+    const list   = document.getElementById('wifi-list');
+    const status = document.getElementById('wifi-scan-status');
+    list.innerHTML = '';
+    status.textContent = 'Scanning…';
+    try {
+        const resp = await fetch('/api/wifi/scan');
+        const nets = await resp.json();
+        status.textContent = 'Found ' + nets.length + ' networks';
+        nets.forEach(n => {
+            const li = document.createElement('li');
+            li.className = 'wifi-item';
+            li.innerHTML = '<span>' + n.ssid + '</span><span class="wifi-rssi">' + n.rssi + ' dBm</span>';
+            li.onclick = () => selectWifi(n.ssid);
+            list.appendChild(li);
+        });
+    } catch(e) { status.textContent = 'Scan failed: ' + e; }
+}
+
+function selectWifi(ssid) {
+    document.getElementById('selected-ssid').textContent = ssid;
+    document.getElementById('wifi-connect-form').style.display = 'block';
+    document.getElementById('wifi-password').focus();
+}
+
+async function connectWifi() {
+    const ssid = document.getElementById('selected-ssid').textContent;
+    const pw   = document.getElementById('wifi-password').value;
+    showStatus('Connecting to ' + ssid + '…');
+    try {
+        const resp = await fetch('/api/wifi/connect', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ssid, password: pw})
+        });
+        const res = await resp.json();
+        alert(res.message || 'Done!');
+        showStatus(res.message || 'Connected');
+    } catch(e) { showStatus('Error: ' + e); }
+}
+
+// ======================================================================
+//  STATUS BAR
+// ======================================================================
+function showStatus(msg) {
+    document.getElementById('status-bar').textContent = msg;
+}
+
+let _toastTimer = null;
+function showToast(msg, type='info', duration=4000) {
+    const t = document.getElementById('toast');
+    t.innerHTML = msg;
+    t.className = 'show ' + type;
+    if (_toastTimer) clearTimeout(_toastTimer);
+    _toastTimer = setTimeout(() => { t.classList.remove('show'); }, duration);
+}
+
+// ======================================================================
+//  DOCS (Markdown renderer)
+// ======================================================================
+async function loadDocs() {
+    const body = document.getElementById('docs-body');
+    body.innerHTML = '<p style="color:var(--dim);">Loading…</p>';
+    try {
+        const resp = await fetch('/api/readme');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        const md = await resp.text();
+        body.innerHTML = renderMarkdown(md);
+    } catch(e) {
+        body.innerHTML = '<p style="color:var(--danger);">Could not load README: ' + e + '</p>';
+    }
+}
+
+function renderMarkdown(md) {
+    let html = '';
+    const lines = md.split('\n');
+    let inPre = false, inTable = false, tableHead = false;
+
+    for (let i = 0; i < lines.length; i++) {
+        let line = lines[i].trimEnd();
+
+        if (line.startsWith('```')) {
+            if (!inPre) { html += '<pre><code>'; inPre = true; }
+            else         { html += '</code></pre>'; inPre = false; }
+            continue;
+        }
+        if (inPre) { html += escHtml(line) + '\n'; continue; }
+
+        if (/^---+$/.test(line.trim())) { html += '<hr>'; continue; }
+
+        if (line.trim().startsWith('|')) {
+            if (!inTable) { html += '<table>'; inTable = true; tableHead = true; }
+            const cells = line.trim().split('|').slice(1,-1);
+            if (cells.every(c => /^[-: ]+$/.test(c))) continue;
+            const tag = tableHead ? 'th' : 'td';
+            html += '<tr>' + cells.map(c => `<${tag}>${inlineMarkdown(c.trim())}</${tag}>`).join('') + '</tr>';
+            tableHead = false;
+            continue;
+        } else if (inTable) { html += '</table>'; inTable = false; }
+
+        if (line.startsWith('# '))   { html += '<h1 style="text-align:center;">' + inlineMarkdown(line.slice(2)) + '</h1>'; continue; }
+        if (line.startsWith('## '))  { html += '<h2>' + inlineMarkdown(line.slice(3)) + '</h2>'; continue; }
+        if (line.startsWith('### ')) { html += '<h3>' + inlineMarkdown(line.slice(4)) + '</h3>'; continue; }
+
+        if (line.startsWith('> ')) {
+            let content = line.slice(2);
+            if (content.startsWith('[!TIP]'))    { html += '<blockquote style="border-left-color:var(--success);background:rgba(61,214,140,0.05);color:var(--success);">' + inlineMarkdown(content.replace('[!TIP]','')) + '</blockquote>'; continue; }
+            if (content.startsWith('[!NOTE]'))   { html += '<blockquote style="border-left-color:var(--blue);background:rgba(93,174,245,0.05);color:var(--blue);">' + inlineMarkdown(content.replace('[!NOTE]','')) + '</blockquote>'; continue; }
+            if (content.startsWith('[!WARNING]')){ html += '<blockquote style="border-left-color:var(--warn);background:rgba(232,151,58,0.05);color:var(--amber);">' + inlineMarkdown(content.replace('[!WARNING]','')) + '</blockquote>'; continue; }
+            html += '<blockquote>' + inlineMarkdown(content) + '</blockquote>';
+            continue;
+        }
+
+        if (line.trim().match(/^[-*] /)) {
+            html += '<ul><li>' + inlineMarkdown(line.trim().slice(2)) + '</li></ul>';
+            continue;
+        }
+        if (line.trim().match(/^\d+\. /)) {
+            html += '<ol><li>' + inlineMarkdown(line.trim().replace(/^\d+\. /,'')) + '</li></ol>';
+            continue;
+        }
+
+        if (line.trim() === '') { continue; }
+        html += '<p>' + inlineMarkdown(line) + '</p>';
+    }
+    if (inPre)   html += '</code></pre>';
+    if (inTable) html += '</table>';
+
+    html = html.replace(/<\/ul>\s*<ul>/g, '').replace(/<\/ol>\s*<ol>/g, '');
+    return html;
+}
+
+function inlineMarkdown(text) {
+    let s = escHtml(text);
+    s = s.replace(/!\[(.*?)\]\((.*?)\{(.*?)\}\)/g, '<img src="$2" alt="$1" width="$3" style="max-width:100%; height:auto; border-radius:4px; margin:1rem auto; display:block;">');
+    s = s.replace(/!\[(.*?)\]\((.*?)\)/g, '<img src="$2" alt="$1" style="max-width:100%; height:auto; border-radius:4px; margin:1rem auto; display:block;">');
+    s = s.replace(/\[(.*?)\]\((.*?)\)/g, '<a href="$2" target="_blank">$1</a>');
+    s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    return s;
+}
+
+function escHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ======================================================================
+//  MACROS
+// ======================================================================
+const COMBO_KEYS = [
+    ["— none —",""],
+    ["A","A"],["B","B"],["C","C"],["D","D"],["E","E"],["F","F"],["G","G"],
+    ["H","H"],["I","I"],["J","J"],["K","K"],["L","L"],["M","M"],["N","N"],
+    ["O","O"],["P","P"],["Q","Q"],["R","R"],["S","S"],["T","T"],["U","U"],
+    ["V","V"],["W","W"],["X","X"],["Y","Y"],["Z","Z"],
+    ["0","ZERO"],["1","ONE"],["2","TWO"],["3","THREE"],["4","FOUR"],
+    ["5","FIVE"],["6","SIX"],["7","SEVEN"],["8","EIGHT"],["9","NINE"],
+    ["F1","F1"],["F2","F2"],["F3","F3"],["F4","F4"],["F5","F5"],["F6","F6"],
+    ["F7","F7"],["F8","F8"],["F9","F9"],["F10","F10"],["F11","F11"],["F12","F12"],
+    ["Enter","ENTER"],["Esc","ESCAPE"],["Space","SPACE"],["Tab","TAB"],
+    ["Backspace","BACKSPACE"],["Delete","DELETE"],["Insert","INSERT"],
+    ["Home","HOME"],["End","END"],["Page Up","PAGE_UP"],["Page Down","PAGE_DOWN"],
+    ["\u2191","UP_ARROW"],["\u2193","DOWN_ARROW"],["\u2190","LEFT_ARROW"],["\u2192","RIGHT_ARROW"],
+    ["Print Screen","PRINT_SCREEN"],["Pause","PAUSE"],["Caps Lock","CAPS_LOCK"],
+    ["-","MINUS"],["=","EQUALS"],["[","LEFT_BRACKET"],["]","RIGHT_BRACKET"],
+    [";","SEMICOLON"],["'","QUOTE"],["\\","BACKSLASH"],[",","COMMA"],[".","PERIOD"],
+    ["/","FORWARD_SLASH"],
+];
+
+let _macros = [];
+let _editingMacroId = null;
+
+function _buildKeySelect(sel, selected) {
+    sel.innerHTML = '';
+    COMBO_KEYS.forEach(([label, val]) => {
+        const opt = document.createElement('option');
+        opt.value = val; opt.textContent = label;
+        if (val === selected) opt.selected = true;
+        sel.appendChild(opt);
+    });
+}
+
+function renderMacros() {
+    const tbody = document.getElementById('macro-tbody');
+    const emptyRow = document.getElementById('macro-empty-row');
+    tbody.querySelectorAll('tr:not(#macro-empty-row)').forEach(r => r.remove());
+    emptyRow.style.display = _macros.length ? 'none' : '';
+
+    _macros.forEach(m => {
+        const tr = document.createElement('tr');
+        const typeClass = { text:'mt-text', combo:'mt-combo', mouse:'mt-mouse', sequence:'mt-sequence' }[m.type] || 'mt-text';
+        const preview = _macroPreview(m);
+        tr.innerHTML = `
+          <td style="color:var(--accent);font-weight:700;">M${m.id}</td>
+          <td>${escHtml(m.name || '')}</td>
+          <td><span class="macro-type-badge ${typeClass}">${m.type}</span></td>
+          <td style="color:var(--muted);font-size:0.72rem;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escHtml(preview)}</td>
+          <td style="text-align:right;">
+            <button class="btn btn-sm btn-secondary" onclick="openMacroEditor(${m.id})" style="margin-right:4px;">Edit</button>
+            <button class="btn btn-sm" style="border-color:rgba(240,88,88,0.4);color:var(--danger);" onclick="deleteMacro(${m.id})">&#10005;</button>
+          </td>`;
+        tbody.appendChild(tr);
+    });
+}
+
+function _macroPreview(m) {
+    if (m.type === 'text')     return m.content || '';
+    if (m.type === 'combo')    return (m.keys || []).join(' + ');
+    if (m.type === 'mouse')    return (m.action || 'left_click').replace(/_/g,' ') + (m.amount > 1 ? ' \xd7' + m.amount : '');
+    if (m.type === 'sequence') return (m.steps || []).length + ' step(s)';
+    return '';
+}
+
+async function loadMacros() {
+    try {
+        const resp = await fetch('/api/macros');
+        _macros = await resp.json();
+        renderMacros();
+        showStatus('Macros loaded.');
+    } catch(e) { showStatus('Error loading macros: ' + e); }
+}
+
+async function _saveMacros() {
+    try {
+        const resp = await fetch('/api/macros', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify(_macros)
+        });
+        const res = await resp.json();
+        if (res.success) {
+            showToast('&#10003; Macros saved', 'success');
+            showStatus('Macros saved.');
+        } else {
+            showToast('&#10007; Save failed: ' + (res.error || 'unknown'), 'error');
+        }
+    } catch(e) { showStatus('Error saving macros: ' + e); }
+}
+
+function openMacroEditor(id) {
+    _editingMacroId = id || null;
+    const existing = id ? _macros.find(m => m.id === id) : null;
+    const slotId = existing ? existing.id : _nextSlotId();
+
+    document.getElementById('macro-editor-title').textContent = existing ? 'Edit Macro — M' + slotId : 'New Macro';
+    document.getElementById('me-slot-label').textContent = 'M' + slotId;
+    document.getElementById('me-slot-kc').textContent = 'KC.MACRO_' + slotId;
+    document.getElementById('me-name').value = existing ? existing.name : '';
+
+    const type = existing ? existing.type : 'text';
+    document.getElementById('me-type').value = type;
+
+    _buildKeySelect(document.getElementById('me-combo-key'), '');
+
+    if (existing) {
+        if (type === 'text') {
+            document.getElementById('me-text-content').value = existing.content || '';
+        } else if (type === 'combo') {
+            _setComboFromKeys(existing.keys || []);
+        } else if (type === 'mouse') {
+            document.getElementById('me-mouse-action').value = existing.action || 'left_click';
+            document.getElementById('me-mouse-amount').value = existing.amount || 1;
+        } else if (type === 'sequence') {
+            _setStepsFromData(existing.steps || []);
+        }
+    } else {
+        document.getElementById('me-text-content').value = '';
+        document.querySelectorAll('#me-combo-mods .mod-chip').forEach(c => c.classList.remove('on'));
+        _buildKeySelect(document.getElementById('me-combo-key'), '');
+        document.getElementById('me-mouse-action').value = 'left_click';
+        document.getElementById('me-mouse-amount').value = 1;
+        document.getElementById('me-steps').innerHTML = '';
+    }
+
+    onMacroTypeChange();
+    document.getElementById('macro-overlay').classList.add('open');
+}
+
+function _nextSlotId() {
+    const used = new Set(_macros.map(m => m.id));
+    for (let i = 1; i <= 8; i++) if (!used.has(i)) return i;
+    return null;
+}
+
+function closeMacroEditor() {
+    document.getElementById('macro-overlay').classList.remove('open');
+}
+
+function onMacroTypeChange() {
+    const type = document.getElementById('me-type').value;
+    document.getElementById('me-panel-text').style.display     = type === 'text'     ? '' : 'none';
+    document.getElementById('me-panel-combo').style.display    = type === 'combo'    ? '' : 'none';
+    document.getElementById('me-panel-mouse').style.display    = type === 'mouse'    ? '' : 'none';
+    document.getElementById('me-panel-sequence').style.display = type === 'sequence' ? '' : 'none';
+}
+
+document.getElementById('me-combo-mods').addEventListener('click', e => {
+    const chip = e.target.closest('.mod-chip');
+    if (chip) chip.classList.toggle('on');
+});
+
+function _setComboFromKeys(keys) {
+    const modKcs = ['LEFT_CONTROL','LEFT_SHIFT','LEFT_ALT','RIGHT_ALT','LEFT_GUI'];
+    document.querySelectorAll('#me-combo-mods .mod-chip').forEach(c => {
+        c.classList.toggle('on', keys.includes(c.dataset.kc));
+    });
+    const mainKey = keys.find(k => !modKcs.includes(k)) || '';
+    _buildKeySelect(document.getElementById('me-combo-key'), mainKey);
+}
+
+function _getComboKeys() {
+    const keys = [];
+    document.querySelectorAll('#me-combo-mods .mod-chip.on').forEach(c => keys.push(c.dataset.kc));
+    const main = document.getElementById('me-combo-key').value;
+    if (main) keys.push(main);
+    return keys;
+}
+
+function addStep(data) {
+    const container = document.getElementById('me-steps');
+    const row = document.createElement('div');
+    row.className = 'step-row';
+
+    const type = data ? data.type : 'text';
+    const val  = data ? (data.value || data.ms || '') : '';
+
+    const typeOpts = ['text','combo','mouse','delay'].map(t =>
+        `<option value="${t}"${t===type?' selected':''}>${t}</option>`).join('');
+
+    row.innerHTML = `
+      <select class="step-type-sel" onchange="onStepTypeChange(this)">${typeOpts}</select>
+      <div class="step-fields" style="flex:1;display:flex;gap:5px;align-items:center;">${_stepFields(type, val, data)}</div>
+      <button class="step-del" onclick="this.closest('.step-row').remove()">&#10005;</button>`;
+    container.appendChild(row);
+}
+
+function onStepTypeChange(sel) {
+    const row = sel.closest('.step-row');
+    const fields = row.querySelector('.step-fields');
+    fields.innerHTML = _stepFields(sel.value, '', null);
+}
+
+function _stepFields(type, val, data) {
+    if (type === 'text') {
+        return `<input class="step-val" type="text" placeholder="text to type…" value="${escHtml(String(val))}">`;
+    } else if (type === 'delay') {
+        return `<input class="step-val" type="number" min="1" max="9999" value="${val||100}" style="width:80px;"> ms`;
+    } else if (type === 'mouse') {
+        const action = data && data.action ? data.action : 'left_click';
+        const amount = data && data.amount ? data.amount : 1;
+        const acts = ['left_click','right_click','middle_click','scroll_up','scroll_down'];
+        const opts = acts.map(a => `<option value="${a}"${a===action?' selected':''}>${a.replace(/_/g,' ')}</option>`).join('');
+        return `<select class="step-type-sel" style="width:140px;">${opts}</select>
+                <span style="color:var(--muted);font-size:0.72rem;">×</span>
+                <input type="number" min="1" max="20" value="${amount}"
+                       style="width:46px;background:var(--bg);border:1px solid var(--border2);
+                              color:var(--text);padding:0.22rem 0.4rem;border-radius:3px;font-size:0.72rem;font-family:inherit;">`;
+    } else {
+        const keys = data && data.keys ? data.keys : [];
+        const modKcs = ['LEFT_CONTROL','LEFT_SHIFT','LEFT_ALT','RIGHT_ALT','LEFT_GUI'];
+        const modLabels = {LEFT_CONTROL:'Ctrl',LEFT_SHIFT:'Shift',LEFT_ALT:'Alt',RIGHT_ALT:'AltGr',LEFT_GUI:'Win'};
+        const chips = modKcs.map(k => {
+            const on = keys.includes(k) ? ' on' : '';
+            return `<div class="mod-chip${on}" data-kc="${k}" onclick="this.classList.toggle('on')" style="font-size:0.65rem;padding:1px 6px;">${modLabels[k]}</div>`;
+        }).join('');
+        const mainKey = keys.find(k => !modKcs.includes(k)) || '';
+        const opts = COMBO_KEYS.map(([l,v]) =>
+            `<option value="${v}"${v===mainKey?' selected':''}>${l}</option>`).join('');
+        return `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">
+            ${chips}
+            <select class="step-type-sel" style="width:70px;">${opts}</select>
+        </div>`;
+    }
+}
+
+function _setStepsFromData(steps) {
+    document.getElementById('me-steps').innerHTML = '';
+    steps.forEach(s => addStep(s));
+}
+
+function _collectSteps() {
+    const steps = [];
+    document.querySelectorAll('#me-steps .step-row').forEach(row => {
+        const type = row.querySelector('.step-type-sel').value;
+        const fields = row.querySelector('.step-fields');
+        if (type === 'text') {
+            steps.push({ type:'text', value: fields.querySelector('input').value });
+        } else if (type === 'delay') {
+            steps.push({ type:'delay', ms: parseInt(fields.querySelector('input').value)||100 });
+        } else if (type === 'mouse') {
+            const sels = fields.querySelectorAll('select,input[type="number"]');
+            const action = sels[0] ? sels[0].value : 'left_click';
+            const amount = sels[1] ? (parseInt(sels[1].value)||1) : 1;
+            const step = { type:'mouse', action };
+            if (amount > 1) step.amount = amount;
+            steps.push(step);
+        } else {
+            const mods = [];
+            fields.querySelectorAll('.mod-chip.on').forEach(c => mods.push(c.dataset.kc));
+            const main = fields.querySelector('select') ? fields.querySelector('select').value : '';
+            const keys = main ? [...mods, main] : mods;
+            steps.push({ type:'combo', keys });
+        }
+    });
+    return steps;
+}
+
+function saveMacroEditor() {
+    const name = document.getElementById('me-name').value.trim();
+    if (!name) { showToast('Please enter a macro name.', 'error'); return; }
+    const type = document.getElementById('me-type').value;
+    const slotId = _editingMacroId || _nextSlotId();
+    if (!slotId) { showToast('All 8 macro slots are used.', 'error'); return; }
+
+    let macroData = { id: slotId, name, type };
+
+    if (type === 'text') {
+        macroData.content = document.getElementById('me-text-content').value;
+    } else if (type === 'combo') {
+        macroData.keys = _getComboKeys();
+    } else if (type === 'mouse') {
+        macroData.action = document.getElementById('me-mouse-action').value;
+        const amt = parseInt(document.getElementById('me-mouse-amount').value) || 1;
+        if (amt > 1) macroData.amount = amt;
+    } else {
+        macroData.steps = _collectSteps();
+    }
+
+    if (_editingMacroId) {
+        const idx = _macros.findIndex(m => m.id === _editingMacroId);
+        if (idx >= 0) _macros[idx] = macroData;
+    } else {
+        _macros.push(macroData);
+    }
+
+    closeMacroEditor();
+    renderMacros();
+    _saveMacros();
+}
+
+function deleteMacro(id) {
+    _macros = _macros.filter(m => m.id !== id);
+    renderMacros();
+    _saveMacros();
+}
+
+document.getElementById('macro-overlay').addEventListener('click', function(e) {
+    if (e.target === this) closeMacroEditor();
+});
+
+// ======================================================================
+//  CIRCUIT SCHEMATIC
+// ======================================================================
+let _circuitInitialized = false;
+function _initCircuit() {
+  if (_circuitInitialized) return;
+  _circuitInitialized = true;
+  (function() {
+    const SVGNS='http://www.w3.org/2000/svg';
+    const CE=(t,a={},s=null)=>{const e=document.createElementNS(SVGNS,t);for(const[k,v]of Object.entries(a))e.setAttribute(k,v);if(s!==null)e.textContent=s;return e};
+
+    // ── LAYOUT ──────────────────────────────────────────────────────────
+    const CPS=23;
+    const CPICO_X=610,CPICO_Y=55,CPICO_W=200,CPICO_H=20*CPS; // 460
+    const CP1Y=CPICO_Y+CPS;   // 78
+    const cpy=i=>CP1Y+i*CPS;
+    const CL_PAD=CPICO_X-16;            // 594
+    const CR_PAD=CPICO_X+CPICO_W+16;    // 826
+
+    const CMAT_X=28,CMAT_Y=55,CMAT_W=438,CMAT_H=CPICO_H,CMAT_R=CMAT_X+CMAT_W; // 466
+
+    const CRX=900,CRW=200;
+
+    // E18: left side, below matrix
+    const CE18X=CMAT_X, CE18Y=CPICO_Y+CPICO_H+50; // 565
+    const CE18W=140, CE18H=50;
+    const CE18CX=CE18X+CE18W/2; // 98
+
+    // E19: right side
+    const CE19Y=CPICO_Y+CPICO_H+50; // 565
+    const CE19H=50;
+    const CE19CY=CE19Y+CE19H/2;  // 590
+
+    // OLED pin y positions
+    const COY=CMAT_Y; // 55
+    const coVCC=COY+42+0*22; // 97
+    const coGND=COY+42+1*22; // 119
+    const coSCL=COY+42+2*22; // 141
+    const coSDA=COY+42+3*22; // 163
+
+    // ── COLORS ──────────────────────────────────────────────────────────
+    const CC={row:'#3DD68C',col:'#5DAEF5',i2c:'#E8973A',key:'#F47AB2',pwr:'#F05858',gnd:'#4A5568',nc:'#1C2840'};
+
+    // ── PIN DATA ─────────────────────────────────────────────────────────
+    const CLPIN=[
+      {pin:1, n:'GP0', f:'ROW_0',  t:'row'},{pin:2, n:'GP1', f:'ROW_1',  t:'row'},
+      {pin:3, n:'GND', f:'GND',    t:'gnd'},{pin:4, n:'GP2', f:'ROW_2',  t:'row'},
+      {pin:5, n:'GP3', f:'ROW_3',  t:'row'},{pin:6, n:'GP4', f:'ROW_4',  t:'row'},
+      {pin:7, n:'GP5', f:'NC',     t:'nc'}, {pin:8, n:'GND', f:'GND',    t:'gnd'},
+      {pin:9, n:'GP6', f:'NC',     t:'nc'}, {pin:10,n:'GP7', f:'NC',     t:'nc'},
+      {pin:11,n:'GP8', f:'NC',     t:'nc'}, {pin:12,n:'GP9', f:'E18 KEY',t:'key'},
+      {pin:13,n:'GND', f:'GND',    t:'gnd'},{pin:14,n:'GP10',f:'COL_6',  t:'col'},
+      {pin:15,n:'GP11',f:'COL_7',  t:'col'},{pin:16,n:'GP12',f:'COL_8',  t:'col'},
+      {pin:17,n:'GP13',f:'COL_9',  t:'col'},{pin:18,n:'GND', f:'GND',    t:'gnd'},
+      {pin:19,n:'GP14',f:'COL_10', t:'col'},{pin:20,n:'GP15',f:'COL_11', t:'col'},
+    ];
+    const CRPIN=[
+      {pin:40,n:'VBUS',  f:'5V USB',  t:'pwr'},{pin:39,n:'VSYS',  f:'VSYS',    t:'pwr'},
+      {pin:38,n:'GND',   f:'GND',     t:'gnd'},{pin:37,n:'3V3_EN',f:'3V3 EN',  t:'nc'},
+      {pin:36,n:'3V3',   f:'3.3V OUT',t:'pwr'},{pin:35,n:'AREF',  f:'ADC REF', t:'nc'},
+      {pin:34,n:'GP28',  f:'NC',      t:'nc'}, {pin:33,n:'AGND',  f:'AGND',    t:'gnd'},
+      {pin:32,n:'GP27',  f:'I2C SCL', t:'i2c'},{pin:31,n:'GP26',  f:'I2C SDA', t:'i2c'},
+      {pin:30,n:'RUN',   f:'RESET',   t:'nc'}, {pin:29,n:'GP22',  f:'E19 KEY', t:'key'},
+      {pin:28,n:'GND',   f:'GND',     t:'gnd'},{pin:27,n:'GP21',  f:'COL_0',   t:'col'},
+      {pin:26,n:'GP20',  f:'COL_1',   t:'col'},{pin:25,n:'GP19',  f:'COL_2',   t:'col'},
+      {pin:24,n:'GP18',  f:'COL_3',   t:'col'},{pin:23,n:'GND',   f:'GND',     t:'gnd'},
+      {pin:22,n:'GP17',  f:'COL_4',   t:'col'},{pin:21,n:'GP16',  f:'COL_5',   t:'col'},
+    ];
+
+    // ── SVG HELPERS ──────────────────────────────────────────────────────
+    const cvp=document.getElementById('circ-vp');
+    const clbl=(x,y,s,a={})=>{
+      const e=CE('text',{x,y,'font-family':'JetBrains Mono,monospace','font-size':8,'pointer-events':'none',...a});
+      e.textContent=s;return e;
+    };
+    const cwire=(g,pts,color,cls)=>{
+      const d=pts.map((p,i)=>(i?'L':'M')+p[0]+' '+p[1]).join(' ');
+      g.appendChild(CE('path',{d,stroke:color,fill:'none','stroke-width':1.8,
+        'stroke-linecap':'round','stroke-linejoin':'round',
+        class:'cwire cwire-'+cls,opacity:.85}));
+    };
+    const cgndSym=(g,x,y,col='#4A5568')=>{
+      [[16,0],[11,5],[6,10]].forEach(([w,dy])=>
+        g.appendChild(CE('line',{x1:x-w/2,y1:y+dy,x2:x+w/2,y2:y+dy,stroke:col,'stroke-width':1.5,'stroke-linecap':'round'})));
+      g.appendChild(CE('line',{x1:x,y1:y-8,x2:x,y2:y,stroke:col,'stroke-width':1.5}));
+    };
+
+    // ── DRAW MATRIX ──────────────────────────────────────────────────────
+    function drawMatrix(){
+      const g=CE('g',{id:'cg-mat'});
+      g.appendChild(CE('rect',{x:CMAT_X,y:CMAT_Y,width:CMAT_W,height:CMAT_H,fill:'#0E1622',stroke:'#1C2840','stroke-width':1.5,rx:6}));
+      g.appendChild(CE('rect',{x:CMAT_X,y:CMAT_Y,width:CMAT_W,height:26,fill:'#162030',rx:6}));
+      g.appendChild(clbl(CMAT_X+CMAT_W/2,CMAT_Y+17,'KEYBOARD MATRIX  5 × 12 = 62 keys',{'text-anchor':'middle','font-size':10,'font-weight':700,fill:'#3DD68C'}));
+      const GX=CMAT_X+52,GY=CMAT_Y+46;
+      const CW2=29,RH=70;
+      for(let c=0;c<12;c++){
+        const cx=GX+c*CW2;
+        g.appendChild(clbl(cx,GY-4,'C'+c,{'text-anchor':'middle','font-size':7,fill:CC.col}));
+        g.appendChild(CE('line',{x1:cx,y1:GY,x2:cx,y2:GY+5*RH,stroke:CC.col,'stroke-width':.7,opacity:.2,'stroke-dasharray':'3,3'}));
+      }
+      for(let r=0;r<5;r++){
+        const ry=GY+r*RH+14;
+        g.appendChild(clbl(GX-6,ry+3,'R'+r,{'text-anchor':'end','font-size':7.5,'font-weight':600,fill:CC.row}));
+        g.appendChild(CE('line',{x1:GX-2,y1:ry,x2:GX+11*CW2+2,y2:ry,stroke:CC.row,'stroke-width':.7,opacity:.2,'stroke-dasharray':'3,3'}));
+        for(let c=0;c<12;c++){
+          const cx=GX+c*CW2;
+          g.appendChild(CE('circle',{cx,cy:ry,r:2,fill:CC.row,opacity:.6}));
+          g.appendChild(CE('line',{x1:cx,y1:ry-1,x2:cx+7,y2:ry-8,stroke:'#5A6A7A','stroke-width':1}));
+          g.appendChild(CE('circle',{cx:cx+8,cy:ry-9,r:1.8,fill:CC.col,opacity:.6}));
+        }
+      }
+      [0,1,3,4,5].forEach((idx,r)=>{
+        const y=cpy(idx);
+        g.appendChild(CE('circle',{cx:CMAT_R,cy:y,r:4,fill:CC.row}));
+        g.appendChild(clbl(CMAT_R-7,y+3,'R'+r,{'text-anchor':'end','font-size':7.5,'font-weight':700,fill:CC.row}));
+      });
+      [13,14,15,16,18,19].forEach((idx,i)=>{
+        const y=cpy(idx);
+        g.appendChild(CE('circle',{cx:CMAT_R,cy:y,r:4,fill:CC.col}));
+        g.appendChild(clbl(CMAT_R-7,y+3,'C'+(i+6),{'text-anchor':'end','font-size':7.5,'font-weight':700,fill:CC.col}));
+      });
+      g.appendChild(clbl(CMAT_X+CMAT_W/2,CMAT_Y+CMAT_H-12,'COL_0–5 via net labels (right side)',{'text-anchor':'middle','font-size':7,fill:'#374255'}));
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW OLED ────────────────────────────────────────────────────────
+    function drawOLED(){
+      const g=CE('g',{id:'cg-oled'});
+      const OH=130;
+      g.appendChild(CE('rect',{x:CRX,y:COY,width:CRW,height:OH,fill:'#0E1622',stroke:CC.i2c,'stroke-width':1.5,rx:6}));
+      g.appendChild(CE('rect',{x:CRX,y:COY,width:CRW,height:24,fill:'#1A1A0A',rx:6}));
+      g.appendChild(clbl(CRX+CRW/2,COY+16,'SSD1306 OLED  128×64',{'text-anchor':'middle','font-size':9.5,'font-weight':700,fill:CC.i2c}));
+      g.appendChild(CE('rect',{x:CRX+10,y:COY+30,width:CRW-20,height:62,fill:'#020408',stroke:'#1C2840','stroke-width':1,rx:3}));
+      g.appendChild(clbl(CRX+CRW/2,COY+62,'MMOrtho v7.1',{'text-anchor':'middle','font-size':8,fill:'#3DD68C',opacity:.55}));
+      g.appendChild(clbl(CRX+CRW/2,COY+76,'I2C addr: 0x3C',{'text-anchor':'middle','font-size':7,fill:'#374255'}));
+      [{n:'VCC',c:CC.pwr,y:coVCC},{n:'GND',c:CC.gnd,y:coGND},{n:'SCL',c:CC.i2c,y:coSCL},{n:'SDA',c:CC.i2c,y:coSDA}].forEach(p=>{
+        g.appendChild(CE('circle',{cx:CRX,cy:p.y,r:3.5,fill:p.c}));
+        g.appendChild(clbl(CRX+8,p.y+3,p.n,{'font-size':7.5,'font-weight':700,fill:p.c}));
+        if(p.n==='GND') cgndSym(g,CRX+CRW-18,p.y,CC.gnd);
+      });
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW E19 ─────────────────────────────────────────────────────────
+    function drawE19(){
+      const g=CE('g',{id:'cg-e19'});
+      g.appendChild(CE('rect',{x:CRX,y:CE19Y,width:CRW,height:CE19H,fill:'#0E1622',stroke:CC.key,'stroke-width':1.5,rx:6}));
+      g.appendChild(CE('rect',{x:CRX,y:CE19Y,width:CRW,height:22,fill:'#180A18',rx:6}));
+      g.appendChild(clbl(CRX+CRW/2,CE19Y+15,'E19  (← LEFT)',{'text-anchor':'middle','font-size':9,'font-weight':700,fill:CC.key}));
+      g.appendChild(clbl(CRX+CRW/2,CE19Y+36,'GP22 · Pin 29',{'text-anchor':'middle','font-size':7.5,fill:'#6E8098'}));
+      g.appendChild(CE('circle',{cx:CRX,cy:CE19CY,r:4,fill:CC.key}));
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW E18 ─────────────────────────────────────────────────────────
+    function drawE18(){
+      const g=CE('g',{id:'cg-e18'});
+      g.appendChild(CE('rect',{x:CE18X,y:CE18Y,width:CE18W,height:CE18H,fill:'#0E1622',stroke:CC.key,'stroke-width':1.5,rx:6}));
+      g.appendChild(CE('rect',{x:CE18X,y:CE18Y,width:CE18W,height:22,fill:'#180A18',rx:6}));
+      g.appendChild(clbl(CE18X+CE18W/2,CE18Y+15,'E18  (↑ UP)',{'text-anchor':'middle','font-size':9,'font-weight':700,fill:CC.key}));
+      g.appendChild(clbl(CE18X+CE18W/2,CE18Y+36,'GP9 · Pin 12',{'text-anchor':'middle','font-size':7.5,fill:'#6E8098'}));
+      g.appendChild(CE('circle',{cx:CE18CX,cy:CE18Y,r:4,fill:CC.key}));
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW GND SYMBOLS ──────────────────────────────────────────────────
+    function drawGND(){
+      const g=CE('g',{id:'cg-gnd'});
+      [2,7,12,17].forEach(i=>{
+        const y=cpy(i),x=CL_PAD-26;
+        g.appendChild(CE('line',{x1:CL_PAD,y1:y,x2:x,y2:y,stroke:CC.gnd,'stroke-width':1.5}));
+        cgndSym(g,x,y,CC.gnd);
+      });
+      [2,7,12,17].forEach(i=>{
+        const y=cpy(i),x=CR_PAD+26;
+        g.appendChild(CE('line',{x1:CR_PAD,y1:y,x2:x,y2:y,stroke:CC.gnd,'stroke-width':1.5}));
+        cgndSym(g,x,y,CC.gnd);
+      });
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW COL NET LABELS ───────────────────────────────────────────────
+    function drawColNetLabels(){
+      const g=CE('g',{id:'cg-netlbl'});
+      const STUB_END=CR_PAD+26,FLAG_W=52;
+      [13,14,15,16,18,19].forEach((ridx,i)=>{
+        const y=cpy(ridx);
+        g.appendChild(CE('line',{x1:CR_PAD,y1:y,x2:STUB_END,y2:y,stroke:CC.col,'stroke-width':1.5,'stroke-dasharray':'5,3','stroke-linecap':'round',class:'cwire cwire-col',opacity:.85}));
+        g.appendChild(CE('rect',{x:STUB_END+1,y:y-9,width:FLAG_W,height:18,fill:'#080D14',stroke:CC.col,'stroke-width':.9,rx:2}));
+        g.appendChild(clbl(STUB_END+1+FLAG_W/2,y+3,'COL_'+i,{'text-anchor':'middle','font-size':7.5,'font-weight':700,fill:CC.col}));
+      });
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW WIRES ───────────────────────────────────────────────────────
+    function drawWires(){
+      const g=CE('g',{id:'cg-wires'});
+      const W2=(pts,col,cls)=>cwire(g,pts,col,cls);
+      [0,1,3,4,5].forEach(i=>W2([[CL_PAD,cpy(i)],[CMAT_R,cpy(i)]],CC.row,'row'));
+      [13,14,15,16,18,19].forEach(i=>W2([[CL_PAD,cpy(i)],[CMAT_R,cpy(i)]],CC.col,'col'));
+      W2([[CR_PAD,cpy(4)],[874,cpy(4)],[874,coVCC],[CRX,coVCC]],CC.pwr,'pwr');
+      W2([[CR_PAD,cpy(8)],[882,cpy(8)],[882,coSCL],[CRX,coSCL]],CC.i2c,'i2c');
+      W2([[CR_PAD,cpy(9)],[890,cpy(9)],[890,coSDA],[CRX,coSDA]],CC.i2c,'i2c');
+      W2([[CR_PAD,cpy(11)],[935,cpy(11)],[935,CE19CY],[CRX,CE19CY]],CC.key,'key');
+      const cbelowY=CPICO_Y+CPICO_H+14; // 529
+      W2([[CL_PAD,cpy(11)],[476,cpy(11)],[476,cbelowY],[CE18CX,cbelowY],[CE18CX,CE18Y]],CC.key,'key');
+      cvp.appendChild(g);
+    }
+
+    // ── DRAW PICO ────────────────────────────────────────────────────────
+    function drawPico(){
+      const g=CE('g',{id:'cg-pico'});
+      g.appendChild(CE('rect',{x:CPICO_X,y:CPICO_Y,width:CPICO_W,height:CPICO_H,fill:'#06120A',stroke:'#1A3A20','stroke-width':2,rx:10}));
+      g.appendChild(clbl(CPICO_X+CPICO_W/2,CPICO_Y+22,'PICO 2 W',{'text-anchor':'middle','font-size':14,'font-weight':700,fill:'#3DD68C'}));
+      g.appendChild(clbl(CPICO_X+CPICO_W/2,CPICO_Y+34,'RP2350',{'text-anchor':'middle','font-size':7,fill:'#1A4A20'}));
+      g.appendChild(CE('rect',{x:CPICO_X+62,y:CPICO_Y+42,width:76,height:28,fill:'#091A0C',stroke:'#1A3A20','stroke-width':1,rx:3}));
+      g.appendChild(clbl(CPICO_X+100,CPICO_Y+54,'CYW43439',{'text-anchor':'middle','font-size':6.5,fill:'#1A4A20'}));
+      g.appendChild(clbl(CPICO_X+100,CPICO_Y+64,'WiFi · BLE',{'text-anchor':'middle','font-size':6,fill:'#1A4A20'}));
+      CLPIN.forEach((p,i)=>{
+        const y=cpy(i),active=p.t!=='nc',col=CC[p.t]||CC.nc;
+        g.appendChild(CE('line',{x1:CPICO_X,y1:y,x2:CL_PAD,y2:y,stroke:active?col:'#162030','stroke-width':1.5}));
+        const dot=CE('circle',{cx:CL_PAD,cy:y,r:4,fill:active?col:'#162030',class:'cpd','data-p':JSON.stringify(p)});
+        g.appendChild(dot);
+        g.appendChild(clbl(CL_PAD-8,y+3,p.n,{'text-anchor':'end','font-size':8,'font-weight':active?600:400,fill:active?col:'#374255'}));
+        g.appendChild(clbl(CPICO_X+5,y+3,p.pin,{'font-size':6.5,fill:'#1A4A20'}));
+      });
+      CRPIN.forEach((p,i)=>{
+        const y=cpy(i),active=p.t!=='nc',col=CC[p.t]||CC.nc;
+        g.appendChild(CE('line',{x1:CPICO_X+CPICO_W,y1:y,x2:CR_PAD,y2:y,stroke:active?col:'#162030','stroke-width':1.5}));
+        const dot=CE('circle',{cx:CR_PAD,cy:y,r:4,fill:active?col:'#162030',class:'cpd','data-p':JSON.stringify(p)});
+        g.appendChild(dot);
+        g.appendChild(clbl(CR_PAD+8,y+3,p.n,{'font-size':8,'font-weight':active?600:400,fill:active?col:'#374255'}));
+        g.appendChild(clbl(CPICO_X+CPICO_W-6,y+3,p.pin,{'text-anchor':'end','font-size':6.5,fill:'#1A4A20'}));
+      });
+      cvp.appendChild(g);
+    }
+
+    // ── BUILD ────────────────────────────────────────────────────────────
+    drawMatrix();drawOLED();drawE19();drawE18();drawGND();drawColNetLabels();drawWires();drawPico();
+
+    // ── PIN HOVER ────────────────────────────────────────────────────────
+    const chic=document.getElementById('circ-hic');
+    document.querySelectorAll('.cpd').forEach(dot=>{
+      dot.addEventListener('mouseenter',()=>{
+        const d=JSON.parse(dot.dataset.p),col=CC[d.t]||CC.nc;
+        chic.innerHTML=`
+          <div class="chir"><span class="chik">Pin:</span><span style="color:#CDD9E5;font-weight:700">#${d.pin}</span></div>
+          <div class="chir"><span class="chik">GPIO:</span><span style="color:${col};font-weight:700">${d.n}</span></div>
+          <div class="chir"><span class="chik">Func:</span><span style="color:#CDD9E5">${d.f}</span></div>
+          <div class="chir"><span class="chik">Type:</span><span style="color:${col};text-transform:uppercase">${d.t}</span></div>`;
+      });
+      dot.addEventListener('mouseleave',()=>{chic.innerHTML='<span class="chip">Hover a pin or wire</span>';});
+    });
+
+    // ── PAN & ZOOM ───────────────────────────────────────────────────────
+    let csc=1,ctx2=0,cty=0;
+    const cvpEl=document.getElementById('circ-vp');
+    const cwrap=document.getElementById('circ-cw');
+    function circApplyT(){
+      cvpEl.setAttribute('transform',`translate(${ctx2},${cty}) scale(${csc})`);
+      document.getElementById('circ-zlab').textContent=Math.round(csc*100)+'%';
+    }
+    window.circZoomCtrl=d=>{csc=Math.max(.15,Math.min(4,csc+d));circApplyT();};
+    window.circResetView=()=>{csc=.82;ctx2=60;cty=30;circApplyT();};
+    cwrap.addEventListener('mousedown',e=>{
+      if(e.target.closest('.ccb,.cvt'))return;
+      cwrap.classList.add('cpan');
+      let lx=e.clientX,ly=e.clientY;
+      const mm=m=>{ctx2+=m.clientX-lx;cty+=m.clientY-ly;lx=m.clientX;ly=m.clientY;circApplyT();};
+      const mu=()=>{cwrap.classList.remove('cpan');window.removeEventListener('mousemove',mm);window.removeEventListener('mouseup',mu);};
+      window.addEventListener('mousemove',mm);window.addEventListener('mouseup',mu);
+    });
+    cwrap.addEventListener('wheel',e=>{
+      e.preventDefault();csc=Math.max(.15,Math.min(4,csc+(e.deltaY>0?-.05:.05)));circApplyT();
+    },{passive:false});
+    window.circSetView=(v,ev)=>{
+      document.querySelectorAll('.cvt').forEach(t=>t.classList.remove('cact'));
+      ev.target.classList.add('cact');
+      document.querySelectorAll('.cwire').forEach(w=>{
+        const show=v==='all'||w.classList.contains('cwire-'+v)||
+          (v==='matrix'&&(w.classList.contains('cwire-row')||w.classList.contains('cwire-col')));
+        w.style.opacity=show?.85:.05;
+      });
+    };
+    window.circFilterType=t=>{
+      const ws=document.querySelectorAll('.cwire');
+      const cls='cwire-'+t;
+      const any=[...ws].some(w=>parseFloat(w.style.opacity||1)<.5);
+      ws.forEach(w=>w.style.opacity=(any?1:w.classList.contains(cls)?1:0.05)*0.85);
+    };
+    circResetView();
+  })();
+}
+
+// ======================================================================
+//  INIT
+// ======================================================================
+function init() {
+    loadKeymap();
+    loadDocs();
+}
+
+init();
+</script>
+</body>
+</html>
