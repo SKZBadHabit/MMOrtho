@@ -4,7 +4,7 @@
 
 _Raspberry Pi Pico 2 W · CircuitPython · WiFi · OLED · Browser-based config_
 
-![MMOrtho keyboard](images/01.png)
+![MMOrtho keyboard](images/00.png)
 
 ---
 
@@ -45,6 +45,37 @@ _Raspberry Pi Pico 2 W · CircuitPython · WiFi · OLED · Browser-based config_
 
 ---
 
+## 3D-Printed Case
+
+MMOrtho is a **fully open-source keyboard** — the case is designed to be 3D printed at home.
+All CAD files are in the [`hardware/`](hardware/) folder.
+
+| File | Format | Use |
+| ---- | ------ | --- |
+| `MMOrtho.stl` | STL | Standard 3D printing (any slicer) |
+| `MMOrtho.3mf` | 3MF | Pre-configured print settings included |
+| `MMOrtho.step` | STEP | Import into any CAD tool |
+| `MMOrtho.f3d` | Fusion 360 | Fully editable native project |
+
+> **Tip:** Use the `.3mf` file for best results — it includes print orientation and settings.
+
+### Bill of Materials
+
+Everything you need to build one MMOrtho:
+
+| Qty | Part | Notes |
+| --- | ---- | ----- |
+| 1 | Raspberry Pi Pico 2 W (RP2350) | The RP2350-based W variant with onboard WiFi |
+| 1 | SSD1306 OLED Display 128×64 | I2C interface, 4-pin |
+| 1 | USB-C Breakout Board | Wired to Pico VBUS/GND for power input |
+| 62 | MX-compatible switches | 60 matrix + 2 thumb keys (E18/E19) |
+| 62 | Keycaps | MX stem, any profile (e.g. XDA, DSA, OEM) |
+| 4 | M3 × 10 mm screws | Case assembly |
+| 4 | M3 hex nuts | Case assembly |
+| 1 | 3D-printed case | Print from `hardware/MMOrtho.3mf` |
+
+---
+
 ## Key Layout
 
 ### Base Layer
@@ -79,7 +110,7 @@ _Raspberry Pi Pico 2 W · CircuitPython · WiFi · OLED · Browser-based config_
 
 ## OLED Dashboard
 
-Switch tabs with **FN + M.**
+Switch tabs with **FN + .**
 
 | Tab     | Content                                                   |
 | ------- | --------------------------------------------------------- |
@@ -199,12 +230,19 @@ See [docs/SETUP.md](docs/SETUP.md) for the full installation guide.
 
 <table>
 <tr>
-<td><img src="images/01.png" alt="MMOrtho front view" width="400"/></td>
+<td><img src="images/00.png" alt="MMOrtho front view" width="400"/></td>
 <td><img src="images/02.png" alt="MMOrtho side view" width="400"/></td>
 </tr>
 <tr>
 <td><img src="images/03.png" alt="MMOrtho OLED display" width="400"/></td>
 <td><img src="images/04.png" alt="MMOrtho internals" width="400"/></td>
+</tr>
+<tr>
+<td><img src="images/06.png" alt="Hand-wiring detail" width="400"/></td>
+<td><img src="images/07.png" alt="Kailh Hotswap Socket clips" width="400"/></td>
+</tr>
+<tr>
+<td colspan="2" align="center"><img src="images/08.png" alt="Assembled keyboard profile" width="810"/></td>
 </tr>
 </table>
 
