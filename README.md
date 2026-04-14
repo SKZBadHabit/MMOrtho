@@ -252,4 +252,4 @@ See [docs/SETUP.md](docs/SETUP.md) for the full installation guide.
 
 MIT License — see [LICENSE](LICENSE) for details.
 
-Developed by **Michael Mörtenhuber**
+Developed by **Bad Habit**
