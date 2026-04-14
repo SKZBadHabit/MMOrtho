@@ -248,6 +248,7 @@ See [docs/SETUP.md](docs/SETUP.md) for the full installation guide.
 
 ---
 
+
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
